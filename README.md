@@ -4,7 +4,7 @@ Parse VTK legacy format with nom parser combinator.
 
 License
 --------
-© 2020 Toshiki Teramura (@termoshtt)
+© 2022 Toshiki Teramura (@termoshtt)
 
 This project is licensed under either of
 
