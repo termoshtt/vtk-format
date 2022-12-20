@@ -1,6 +1,6 @@
-vtk-legacy
+vtk-format
 -----------
-Parse VTK legacy format with nom parser combinator.
+Parser of [VTK legacy format](https://vtk.org/wp-content/uploads/2015/04/file-formats.pdf)
 
 License
 --------

@@ -1,5 +1,5 @@
 [package]
-name = "vtk-legacy"
+name = "vtk-format"
 version = "0.1.0"
 edition = "2021"
 
