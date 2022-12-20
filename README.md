@@ -1,5 +1,7 @@
 vtk-format
 -----------
+[![master](https://img.shields.io/badge/docs-master-blue)](https://termoshtt.github.io/vtk-format/vtk_format/index.html)
+
 Parser of [VTK legacy format](https://vtk.org/wp-content/uploads/2015/04/file-formats.pdf)
 
 License
