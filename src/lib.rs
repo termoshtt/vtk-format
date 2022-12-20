@@ -1,55 +1,19 @@
 //! Parser of [VTK legacy format](https://vtk.org/wp-content/uploads/2015/04/file-formats.pdf)
 
 mod data;
+mod header;
+
 pub use data::*;
+pub use header::*;
 
 use nom::{
-    branch::alt, bytes::complete::*, character::complete::*, error::VerboseError, sequence::tuple,
-    Parser,
+    bytes::complete::*, character::complete::*, error::VerboseError, sequence::tuple, Parser,
 };
 
 pub type Result<'input, T> = nom::IResult<&'input str, T, VerboseError<&'input str>>;
 
 pub fn line_end(input: &str) -> Result<()> {
     tuple((space0, line_ending)).map(|_| ()).parse(input)
-}
-
-pub fn header(input: &str) -> Result<(u64, u64)> {
-    let (input, _) = tuple((
-        char('#'),
-        space0,
-        tag("vtk"),
-        space1,
-        tag("DataFile"),
-        space1,
-        tag("Version"),
-        space1,
-    ))
-    .parse(input)?;
-
-    tuple((uint, char('.'), uint))
-        .map(|(major, _dot, minor)| (major, minor))
-        .parse(input)
-}
-
-pub fn title(input: &str) -> Result<&str> {
-    let (input, _) = space0(input)?;
-    take_until("\n").parse(input)
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum Format {
-    ASCII,
-    BINARY,
-}
-
-pub fn format(input: &str) -> Result<Format> {
-    let (input, _) = space0(input)?;
-    alt((
-        tag("ASCII").map(|_| Format::ASCII),
-        tag("BINARY").map(|_| Format::BINARY),
-    ))
-    .parse(input)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -256,9 +220,7 @@ pub fn vtk(input: &str) -> Result<Vtk> {
 
 #[cfg(test)]
 mod test {
-    use super::{
-        Coordinate, Data3, DataType, Dimension, Format, RectlinearGrid, StructuredGrid, Vtk,
-    };
+    use super::{Coordinate, Data3, Dimension, Format, RectlinearGrid, StructuredGrid, Vtk};
     use nom::Finish;
 
     #[test]
