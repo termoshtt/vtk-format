@@ -9,8 +9,8 @@ pub struct Dimension {
 }
 
 pub fn dimension(input: &str) -> Result<Dimension> {
-    tuple((space0, tag("DIMENSIONS"), space1, u64::parse3))
-        .map(|(_, _tag, _, [nx, ny, nz])| Dimension { nx, ny, nz })
+    tuple((tag("DIMENSIONS"), multispace1, u64::parse3))
+        .map(|(_, _, [nx, ny, nz])| Dimension { nx, ny, nz })
         .parse(input)
 }
 
@@ -23,19 +23,25 @@ pub struct StructuredPoints {
 
 pub fn structured_points(input: &str) -> Result<StructuredPoints> {
     // DATASET STRUCTURED_POINTS
-    let (input, _tag) =
-        tuple((tag("DATASET"), space1, tag("STRUCTURED_POINTS"), line_end)).parse(input)?;
+    let (input, _tag) = tuple((
+        multispace0,
+        tag("DATASET"),
+        multispace1,
+        tag("STRUCTURED_POINTS"),
+        multispace1,
+    ))
+    .parse(input)?;
 
     // DIMENSIONS nx ny nz
-    let (input, (dimension, _)) = tuple((dimension, line_end)).parse(input)?;
+    let (input, (dimension, _)) = tuple((dimension, multispace1)).parse(input)?;
 
     // ORIGIN x y z
     let (input, (_, _, origin, _)) =
-        tuple((tag("ORIGIN"), space1, f64::parse3, line_end)).parse(input)?;
+        tuple((tag("ORIGIN"), multispace1, f64::parse3, multispace1)).parse(input)?;
 
     // SPACING sx sy sz
-    let (input, (_, _, spacing, _)) =
-        tuple((tag("SPACING"), space1, f64::parse3, line_end)).parse(input)?;
+    let (input, (_, _, spacing)) =
+        tuple((tag("SPACING"), multispace1, f64::parse3)).parse(input)?;
 
     Ok((
         input,
@@ -55,28 +61,33 @@ pub struct StructuredGrid {
 
 pub fn structured_grid(input: &str) -> Result<StructuredGrid> {
     // DATASET STRUCTURED_GRID
-    let (input, _) =
-        tuple((tag("DATASET"), space1, tag("STRUCTURED_GRID"), line_end)).parse(input)?;
+    let (input, _) = tuple((
+        multispace0,
+        tag("DATASET"),
+        multispace1,
+        tag("STRUCTURED_GRID"),
+        multispace1,
+    ))
+    .parse(input)?;
 
     // DIMENSIONS nx ny nz
-    let (input, (_, dimension, _)) = tuple((space0, dimension, line_end)).parse(input)?;
+    let (input, (dimension, _)) = tuple((dimension, multispace1)).parse(input)?;
 
     // POINTS n dataType
-    let (input, (_, _, _, n, _, data_type, _)) = tuple((
-        space0,
+    let (input, (_, _, n, _, data_type, _)) = tuple((
         tag("POINTS"),
-        space1,
+        multispace1,
         uint::<usize>,
-        space1,
+        multispace1,
         data_type,
-        line_end,
+        multispace1,
     ))
     .parse(input)?;
 
     // p0x p0y p0z
     // p1x p1y p1z
     // ...
-    let (input, (_, points)) = tuple((multispace0, data3(data_type, n))).parse(input)?;
+    let (input, points) = data3(data_type, n).parse(input)?;
 
     Ok((input, StructuredGrid { dimension, points }))
 }
@@ -92,56 +103,51 @@ pub struct RectlinearGrid {
 pub fn rectlinear_grid(input: &str) -> Result<RectlinearGrid> {
     // DATASET RECTILINEAR_GRID
     let (input, _) = tuple((
-        space0,
+        multispace0,
         tag("DATASET"),
-        space1,
+        multispace1,
         tag("RECTILINEAR_GRID"),
-        line_end,
+        multispace1,
     ))
     .parse(input)?;
     // DIMENSIONS nx ny nz
-    let (input, (_, dimension, _)) = tuple((space0, dimension, line_end)).parse(input)?;
+    let (input, (dimension, _)) = tuple((dimension, multispace1)).parse(input)?;
     // X_COORDINATES nx dataType
-    let (input, (_, _, _, nx, _, ty, _)) = tuple((
-        space0,
+    let (input, (_, _, nx, _, ty, _)) = tuple((
         tag("X_COORDINATES"),
-        space1,
+        multispace1,
         uint::<usize>,
-        space1,
+        multispace1,
         data_type,
-        line_end,
+        multispace1,
     ))
     .parse(input)?;
     // x0 x1 ...
-    let (input, (_, x_coodinates)) = tuple((multispace0, data1d(ty, nx))).parse(input)?;
-    let (input, _) = line_end(input)?;
+    let (input, (x_coodinates, _)) = tuple((data1d(ty, nx), multispace1)).parse(input)?;
     // Y_COORDINATES ny dataType
-    let (input, (_, _, _, ny, _, ty, _)) = tuple((
-        space0,
+    let (input, (_, _, ny, _, ty, _)) = tuple((
         tag("Y_COORDINATES"),
-        space1,
+        multispace1,
         uint::<usize>,
-        space1,
+        multispace1,
         data_type,
-        line_end,
+        multispace1,
     ))
     .parse(input)?;
     // y0 y1 ...
-    let (input, (_, y_coodinates)) = tuple((multispace0, data1d(ty, ny))).parse(input)?;
-    let (input, _) = line_end(input)?;
+    let (input, (y_coodinates, _)) = tuple((data1d(ty, ny), multispace1)).parse(input)?;
     // Z_COORDINATES nz dataType
-    let (input, (_, _, _, nz, _, ty, _)) = tuple((
-        space0,
+    let (input, (_, _, nz, _, ty, _)) = tuple((
         tag("Z_COORDINATES"),
-        space1,
+        multispace1,
         uint::<usize>,
-        space1,
+        multispace1,
         data_type,
-        line_end,
+        multispace1,
     ))
     .parse(input)?;
     // z0 z1 ...
-    let (input, (_, z_coodinates)) = tuple((multispace0, data1d(ty, nz))).parse(input)?;
+    let (input, z_coodinates) = data1d(ty, nz).parse(input)?;
 
     Ok((
         input,
