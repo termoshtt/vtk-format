@@ -111,14 +111,45 @@ impl_data!(i64, int);
 impl_data!(f32, float);
 impl_data!(f64, double);
 
-pub fn take<D: Data>(n: usize) -> impl FnMut(&str) -> Result<Vec<D>> {
+pub fn take_n<D: Data>(n: usize) -> impl FnMut(&str) -> Result<Vec<D>> {
     move |input| {
-        let (input, first) = D::parse(input)?;
-        let (input, mut tail) =
-            many_m_n(0, n - 1, tuple((multispace1, D::parse)).map(|(_, d)| d)).parse(input)?;
-        tail.insert(0, first);
-        Ok((input, tail))
+        let mut out = Vec::with_capacity(n);
+        let (mut input, first) = D::parse(input)?;
+        out.push(first);
+        for _ in 0..(n - 1) {
+            let (sub_input, (_, nth)) = tuple((multispace1, D::parse)).parse(input)?;
+            out.push(nth);
+            input = sub_input;
+        }
+        Ok((input, out))
     }
+}
+
+pub fn take_3n<D: Data>(n: usize) -> impl FnMut(&str) -> Result<Vec<[D; 3]>> {
+    move |input| {
+        let data3 = |s| {
+            tuple((D::parse, multispace1, D::parse, multispace1, D::parse))
+                .map(|(d1, _, d2, _, d3)| [d1, d2, d3])
+                .parse(s)
+        };
+
+        let mut out = Vec::with_capacity(n);
+        let (mut input, first) = data3(input)?;
+        out.push(first);
+        for _ in 0..(n - 1) {
+            let (sub_input, (_, nth)) = tuple((multispace1, data3)).parse(input)?;
+            out.push(nth);
+            input = sub_input;
+        }
+        Ok((input, out))
+    }
+}
+
+pub fn take_n_m<D: Data>(
+    _size_outer: usize,
+    _size_inner: usize,
+) -> impl FnMut(&str) -> Result<Vec<Vec<D>>> {
+    move |input| Ok((input, Vec::new()))
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
@@ -209,20 +240,58 @@ mod test {
     }
 
     #[test]
-    fn take() {
-        let (residual, taken) = super::take::<f32>(4)
+    fn take_n() {
+        let (residual, taken) = super::take_n::<f32>(4)
             .parse(r#"1.0 2.0 3.0 4.0"#)
             .finish()
             .unwrap();
         assert_eq!(residual, "");
         assert_eq!(taken, vec![1.0, 2.0, 3.0, 4.0]);
 
-        let (residual, taken) = super::take::<f32>(2)
+        let (residual, taken) = super::take_n::<f32>(2)
             .parse(r#"1.0 2.0 3.0 4.0"#)
             .finish()
             .unwrap();
         assert_eq!(residual, " 3.0 4.0");
         assert_eq!(taken, vec![1.0, 2.0]);
+    }
+
+    #[test]
+    fn take_3n() {
+        let (residual, taken) = super::take_3n::<f32>(2)
+            .parse(
+                r#"
+                1.0 2.0 3.0
+                4.0 5.0 6.0
+                "#
+                .trim(),
+            )
+            .finish()
+            .unwrap();
+        assert_eq!(residual, "");
+        assert_eq!(taken, vec![[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]);
+
+        let (residual, taken) = super::take_3n::<f32>(2)
+            .parse(
+                r#"
+                1.0 2.0 3.0 4.0 5.0 6.0
+                "#
+                .trim(),
+            )
+            .finish()
+            .unwrap();
+        assert_eq!(residual, "");
+        assert_eq!(taken, vec![[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]);
+
+        assert!(super::take_3n::<f32>(2)
+            .parse(
+                r#"
+                1.0 2.0 3.0 4.0 5.0
+                "#
+                .trim(),
+            )
+            .finish()
+            .is_err());
     }
 
     #[test]
