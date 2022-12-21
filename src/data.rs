@@ -198,7 +198,39 @@ pub fn data3(data_type: DataType, input: &str) -> Result<Data3> {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub enum DataVec {
+pub enum Data1D {
+    Bit(Vec<bool>),
+    UnsignedChar(Vec<u8>),
+    Char(Vec<i8>),
+    UnsignedShort(Vec<u16>),
+    Short(Vec<i16>),
+    UnsignedInt(Vec<u32>),
+    Int(Vec<i32>),
+    UnsignedLong(Vec<u64>),
+    Long(Vec<i64>),
+    Float(Vec<f32>),
+    Double(Vec<f64>),
+}
+
+pub fn coordinate(data_type: DataType, input: &str) -> Result<Data1D> {
+    let (input, _) = space0(input)?;
+    match data_type {
+        DataType::Bit => unimplemented!(),
+        DataType::Char => i8::parse_vec.map(Data1D::Char).parse(input),
+        DataType::UnsignedChar => u8::parse_vec.map(Data1D::UnsignedChar).parse(input),
+        DataType::Short => i16::parse_vec.map(Data1D::Short).parse(input),
+        DataType::UnsignedShort => u16::parse_vec.map(Data1D::UnsignedShort).parse(input),
+        DataType::Int => i32::parse_vec.map(Data1D::Int).parse(input),
+        DataType::UnsignedInt => u32::parse_vec.map(Data1D::UnsignedInt).parse(input),
+        DataType::Long => i64::parse_vec.map(Data1D::Long).parse(input),
+        DataType::UnsignedLong => u64::parse_vec.map(Data1D::UnsignedLong).parse(input),
+        DataType::Float => f32::parse_vec.map(Data1D::Float).parse(input),
+        DataType::Double => f64::parse_vec.map(Data1D::Double).parse(input),
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub enum Data2D {
     Bit(Vec<Vec<bool>>),
     UnsignedChar(Vec<Vec<u8>>),
     Char(Vec<Vec<i8>>),
@@ -212,23 +244,23 @@ pub enum DataVec {
     Double(Vec<Vec<f64>>),
 }
 
-pub fn data_vec(data_type: DataType, input: &str) -> Result<DataVec> {
+pub fn data_vec(data_type: DataType, input: &str) -> Result<Data2D> {
     fn inner<D: Data>(input: &str) -> Result<Vec<Vec<D>>> {
         separated_list0(line_end, D::parse_vec).parse(input)
     }
 
     match data_type {
         DataType::Bit => unimplemented!(),
-        DataType::Char => inner.map(DataVec::Char).parse(input),
-        DataType::UnsignedChar => inner.map(DataVec::UnsignedChar).parse(input),
-        DataType::Short => inner.map(DataVec::Short).parse(input),
-        DataType::UnsignedShort => inner.map(DataVec::UnsignedShort).parse(input),
-        DataType::Int => inner.map(DataVec::Int).parse(input),
-        DataType::UnsignedInt => inner.map(DataVec::UnsignedInt).parse(input),
-        DataType::Long => inner.map(DataVec::Long).parse(input),
-        DataType::UnsignedLong => inner.map(DataVec::UnsignedLong).parse(input),
-        DataType::Float => inner.map(DataVec::Float).parse(input),
-        DataType::Double => inner.map(DataVec::Double).parse(input),
+        DataType::Char => inner.map(Data2D::Char).parse(input),
+        DataType::UnsignedChar => inner.map(Data2D::UnsignedChar).parse(input),
+        DataType::Short => inner.map(Data2D::Short).parse(input),
+        DataType::UnsignedShort => inner.map(Data2D::UnsignedShort).parse(input),
+        DataType::Int => inner.map(Data2D::Int).parse(input),
+        DataType::UnsignedInt => inner.map(Data2D::UnsignedInt).parse(input),
+        DataType::Long => inner.map(Data2D::Long).parse(input),
+        DataType::UnsignedLong => inner.map(Data2D::UnsignedLong).parse(input),
+        DataType::Float => inner.map(Data2D::Float).parse(input),
+        DataType::Double => inner.map(Data2D::Double).parse(input),
     }
 }
 

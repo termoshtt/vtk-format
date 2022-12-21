@@ -82,43 +82,11 @@ pub fn structured_grid(input: &str) -> Result<StructuredGrid> {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub enum Coordinate {
-    Bit(Vec<bool>),
-    UnsignedChar(Vec<u8>),
-    Char(Vec<i8>),
-    UnsignedShort(Vec<u16>),
-    Short(Vec<i16>),
-    UnsignedInt(Vec<u32>),
-    Int(Vec<i32>),
-    UnsignedLong(Vec<u64>),
-    Long(Vec<i64>),
-    Float(Vec<f32>),
-    Double(Vec<f64>),
-}
-
-pub fn coordinate(data_type: DataType, input: &str) -> Result<Coordinate> {
-    let (input, _) = space0(input)?;
-    match data_type {
-        DataType::Bit => unimplemented!(),
-        DataType::Char => i8::parse_vec.map(Coordinate::Char).parse(input),
-        DataType::UnsignedChar => u8::parse_vec.map(Coordinate::UnsignedChar).parse(input),
-        DataType::Short => i16::parse_vec.map(Coordinate::Short).parse(input),
-        DataType::UnsignedShort => u16::parse_vec.map(Coordinate::UnsignedShort).parse(input),
-        DataType::Int => i32::parse_vec.map(Coordinate::Int).parse(input),
-        DataType::UnsignedInt => u32::parse_vec.map(Coordinate::UnsignedInt).parse(input),
-        DataType::Long => i64::parse_vec.map(Coordinate::Long).parse(input),
-        DataType::UnsignedLong => u64::parse_vec.map(Coordinate::UnsignedLong).parse(input),
-        DataType::Float => f32::parse_vec.map(Coordinate::Float).parse(input),
-        DataType::Double => f64::parse_vec.map(Coordinate::Double).parse(input),
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct RectlinearGrid {
     dimension: Dimension,
-    x_coodinates: Coordinate,
-    y_coodinates: Coordinate,
-    z_coodinates: Coordinate,
+    x_coodinates: Data1D,
+    y_coodinates: Data1D,
+    z_coodinates: Data1D,
 }
 
 pub fn rectlinear_grid(input: &str) -> Result<RectlinearGrid> {
@@ -188,7 +156,7 @@ pub fn rectlinear_grid(input: &str) -> Result<RectlinearGrid> {
 
 #[cfg(test)]
 mod test {
-    use super::{Coordinate, Data3, Dimension, RectlinearGrid, StructuredGrid};
+    use super::{Data1D, Data3, Dimension, RectlinearGrid, StructuredGrid};
     use nom::Finish;
 
     #[test]
@@ -260,9 +228,9 @@ mod test {
                     ny: 5,
                     nz: 5
                 },
-                x_coodinates: Coordinate::Float(vec![0.0, 1.0, 2.0, 3.0, 4.0]),
-                y_coodinates: Coordinate::Float(vec![0.0, 1.0, 2.0, 3.0, 4.0]),
-                z_coodinates: Coordinate::Float(vec![0.0, 1.0, 2.0, 3.0, 4.0]),
+                x_coodinates: Data1D::Float(vec![0.0, 1.0, 2.0, 3.0, 4.0]),
+                y_coodinates: Data1D::Float(vec![0.0, 1.0, 2.0, 3.0, 4.0]),
+                z_coodinates: Data1D::Float(vec![0.0, 1.0, 2.0, 3.0, 4.0]),
             }
         );
     }
