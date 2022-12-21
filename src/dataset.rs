@@ -31,74 +31,6 @@ pub fn points(input: &str) -> Result<Data3> {
     data3(data_type, n).parse(input)
 }
 
-// VERTICES n size
-// numPoints0 i0 j0 k0 ...
-// numPoints1 i1 j1 k1 ...
-// ...
-pub fn vertices(input: &str) -> Result<Vec<Vec<u64>>> {
-    let (input, (_, _, n, _, size, _)) = tuple((
-        tag("VERTICES"),
-        multispace1,
-        uint::<usize>,
-        multispace1,
-        uint::<usize>,
-        multispace1,
-    ))
-    .parse(input)?;
-    take_n_m(n, size / n).parse(input)
-}
-
-// LINES n size
-// numPoints0 i0 j0 k0 ...
-// numPoints1 i1 j1 k1 ...
-// ...
-pub fn lines(input: &str) -> Result<Vec<Vec<u64>>> {
-    let (input, (_, _, n, _, size, _)) = tuple((
-        tag("LINES"),
-        multispace1,
-        uint::<usize>,
-        multispace1,
-        uint::<usize>,
-        multispace1,
-    ))
-    .parse(input)?;
-    take_n_m(n, size / n).parse(input)
-}
-
-// POLYGONS n size
-// numPoints0 i0 j0 k0 ...
-// numPoints1 i1 j1 k1 ...
-// ...
-pub fn polygons(input: &str) -> Result<Vec<Vec<u64>>> {
-    let (input, (_, _, n, _, size, _)) = tuple((
-        tag("POLYGONS"),
-        multispace1,
-        uint::<usize>,
-        multispace1,
-        uint::<usize>,
-        multispace1,
-    ))
-    .parse(input)?;
-    take_n_m(n, size / n).parse(input)
-}
-
-// TRIANGLE_STRIPS n size
-// numPoints0 i0 j0 k0 ...
-// numPoints1 i1 j1 k1 ...
-// ...
-pub fn triangle_strips(input: &str) -> Result<Vec<Vec<u64>>> {
-    let (input, (_, _, n, _, size, _)) = tuple((
-        tag("TRIANGLE_STRIPS"),
-        multispace1,
-        uint::<usize>,
-        multispace1,
-        uint::<usize>,
-        multispace1,
-    ))
-    .parse(input)?;
-    take_n_m(n, size / n).parse(input)
-}
-
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct StructuredPoints {
     pub dimension: Dimension,
@@ -216,16 +148,33 @@ pub struct Polydata {
     pub triangle_strips: Option<Vec<Vec<u64>>>,
 }
 
+fn indices2d(tag_: &'static str) -> impl FnMut(&str) -> Result<Vec<Vec<u64>>> {
+    move |input| {
+        let (input, (_, _, n, _, size, _)) = tuple((
+            tag(tag_),
+            multispace1,
+            uint::<usize>,
+            multispace1,
+            uint::<usize>,
+            multispace1,
+        ))
+        .parse(input)?;
+        take_n_m(n, size / n).parse(input)
+    }
+}
+
 // DATASET POLYDATA
 pub fn polydata(input: &str) -> Result<Polydata> {
     let (input, _) =
         tuple((tag("DATASET"), multispace1, tag("POLYDATA"), multispace1)).parse(input)?;
     let (input, points) = points(input)?;
-    let (input, vertices) = opt(tuple((multispace1, vertices)).map(|x| x.1)).parse(input)?;
-    let (input, lines) = opt(tuple((multispace1, lines)).map(|x| x.1)).parse(input)?;
-    let (input, polygons) = opt(tuple((multispace1, polygons)).map(|x| x.1)).parse(input)?;
+    let (input, vertices) =
+        opt(tuple((multispace1, indices2d("VERTICES"))).map(|x| x.1)).parse(input)?;
+    let (input, lines) = opt(tuple((multispace1, indices2d("LINES"))).map(|x| x.1)).parse(input)?;
+    let (input, polygons) =
+        opt(tuple((multispace1, indices2d("POLYGONS"))).map(|x| x.1)).parse(input)?;
     let (input, triangle_strips) =
-        opt(tuple((multispace1, triangle_strips)).map(|x| x.1)).parse(input)?;
+        opt(tuple((multispace1, indices2d("TRIANGLE_STRIPS"))).map(|x| x.1)).parse(input)?;
     Ok((
         input,
         Polydata {
