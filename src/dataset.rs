@@ -92,10 +92,10 @@ pub fn structured_grid(input: &str) -> Result<StructuredGrid> {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct RectlinearGrid {
-    dimension: Dimension,
-    x_coodinates: Data1D,
-    y_coodinates: Data1D,
-    z_coodinates: Data1D,
+    pub dimension: Dimension,
+    pub x_coodinates: Data1D,
+    pub y_coodinates: Data1D,
+    pub z_coodinates: Data1D,
 }
 
 pub fn rectlinear_grid(input: &str) -> Result<RectlinearGrid> {
@@ -153,6 +153,107 @@ pub fn rectlinear_grid(input: &str) -> Result<RectlinearGrid> {
             x_coodinates,
             y_coodinates,
             z_coodinates,
+        },
+    ))
+}
+
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub struct Polydata {
+    pub points: Data3,
+    pub vertices: Vec<Vec<u64>>,
+    pub lines: Vec<Vec<u64>>,
+    pub polygons: Vec<Vec<u64>>,
+    pub triangle_strips: Vec<Vec<u64>>,
+}
+
+pub fn polydata(input: &str) -> Result<Polydata> {
+    // DATASET POLYDATA
+    let (input, _) =
+        tuple((tag("DATASET"), multispace1, tag("POLYDATA"), multispace1)).parse(input)?;
+
+    // POINTS n dataType
+    let (input, (_, _, n, _, data_type, _)) = tuple((
+        tag("POINTS"),
+        multispace1,
+        uint::<usize>,
+        multispace1,
+        data_type,
+        multispace1,
+    ))
+    .parse(input)?;
+    // p0x p0y p0z
+    // p1x p1y p1z
+    // ...
+    let (input, (points, _)) = tuple((data3(data_type, n), multispace1)).parse(input)?;
+
+    // VERTICES n size
+    let (input, (_, _, n, _, size, _)) = tuple((
+        tag("VERTICES"),
+        multispace1,
+        uint::<usize>,
+        multispace1,
+        uint::<usize>,
+        multispace1,
+    ))
+    .parse(input)?;
+    // numPoints0 i0 j0 k0 ...
+    // numPoints1 i1 j1 k1 ...
+    // ...
+    let (input, vertices) = take_n_m(n, size / n).parse(input)?;
+
+    // LINES n size
+    let (input, (_, _, n, _, size, _)) = tuple((
+        tag("LINES"),
+        multispace1,
+        uint::<usize>,
+        multispace1,
+        uint::<usize>,
+        multispace1,
+    ))
+    .parse(input)?;
+    // numPoints0 i0 j0 k0 ...
+    // numPoints1 i1 j1 k1 ...
+    // ...
+    let (input, lines) = take_n_m(n, size / n).parse(input)?;
+
+    // POLYGONS n size
+    let (input, (_, _, n, _, size, _)) = tuple((
+        tag("POLYGONS"),
+        multispace1,
+        uint::<usize>,
+        multispace1,
+        uint::<usize>,
+        multispace1,
+    ))
+    .parse(input)?;
+    // numPoints0 i0 j0 k0 ...
+    // numPoints1 i1 j1 k1 ...
+    // ...
+    let (input, polygons) = take_n_m(n, size / n).parse(input)?;
+
+    // TRIANGLE_STRIPS n size
+    let (input, (_, _, n, _, size, _)) = tuple((
+        tag("TRIANGLE_STRIPS"),
+        multispace1,
+        uint::<usize>,
+        multispace1,
+        uint::<usize>,
+        multispace1,
+    ))
+    .parse(input)?;
+    // numPoints0 i0 j0 k0 ...
+    // numPoints1 i1 j1 k1 ...
+    // ...
+    let (input, triangle_strips) = take_n_m(n, size / n).parse(input)?;
+
+    Ok((
+        input,
+        Polydata {
+            points,
+            vertices,
+            lines,
+            polygons,
+            triangle_strips,
         },
     ))
 }
