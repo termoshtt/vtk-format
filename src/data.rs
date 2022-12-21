@@ -1,4 +1,4 @@
-use crate::{line_end, Result};
+use crate::Result;
 use nom::{
     branch::alt,
     bytes::complete::*,
@@ -111,7 +111,7 @@ impl_data!(i64, int);
 impl_data!(f32, float);
 impl_data!(f64, double);
 
-pub fn take_n<D: Data>(n: usize) -> impl FnMut(&str) -> Result<Vec<D>> {
+fn take_n<D: Data>(n: usize) -> impl FnMut(&str) -> Result<Vec<D>> {
     move |input| {
         let mut out = Vec::with_capacity(n);
         let (mut input, first) = D::parse(input)?;
@@ -125,7 +125,7 @@ pub fn take_n<D: Data>(n: usize) -> impl FnMut(&str) -> Result<Vec<D>> {
     }
 }
 
-pub fn take_3n<D: Data>(n: usize) -> impl FnMut(&str) -> Result<Vec<[D; 3]>> {
+fn take_3n<D: Data>(n: usize) -> impl FnMut(&str) -> Result<Vec<[D; 3]>> {
     move |input| {
         let data3 = |s| {
             tuple((D::parse, multispace1, D::parse, multispace1, D::parse))
@@ -145,7 +145,7 @@ pub fn take_3n<D: Data>(n: usize) -> impl FnMut(&str) -> Result<Vec<[D; 3]>> {
     }
 }
 
-pub fn take_n_m<D: Data>(
+fn take_n_m<D: Data>(
     size_outer: usize,
     size_inner: usize,
 ) -> impl FnMut(&str) -> Result<Vec<Vec<D>>> {
@@ -239,23 +239,29 @@ pub enum Data2D {
     Double(Vec<Vec<f64>>),
 }
 
-pub fn data_vec(data_type: DataType, input: &str) -> Result<Data2D> {
-    fn inner<D: Data>(input: &str) -> Result<Vec<Vec<D>>> {
-        separated_list0(line_end, D::parse_vec).parse(input)
-    }
-
-    match data_type {
+pub fn data2d(
+    data_type: DataType,
+    outer: usize,
+    inner: usize,
+) -> impl FnMut(&str) -> Result<Data2D> {
+    move |input| match data_type {
         DataType::Bit => unimplemented!(),
-        DataType::Char => inner.map(Data2D::Char).parse(input),
-        DataType::UnsignedChar => inner.map(Data2D::UnsignedChar).parse(input),
-        DataType::Short => inner.map(Data2D::Short).parse(input),
-        DataType::UnsignedShort => inner.map(Data2D::UnsignedShort).parse(input),
-        DataType::Int => inner.map(Data2D::Int).parse(input),
-        DataType::UnsignedInt => inner.map(Data2D::UnsignedInt).parse(input),
-        DataType::Long => inner.map(Data2D::Long).parse(input),
-        DataType::UnsignedLong => inner.map(Data2D::UnsignedLong).parse(input),
-        DataType::Float => inner.map(Data2D::Float).parse(input),
-        DataType::Double => inner.map(Data2D::Double).parse(input),
+        DataType::Char => take_n_m(outer, inner).map(Data2D::Char).parse(input),
+        DataType::UnsignedChar => take_n_m(outer, inner)
+            .map(Data2D::UnsignedChar)
+            .parse(input),
+        DataType::Short => take_n_m(outer, inner).map(Data2D::Short).parse(input),
+        DataType::UnsignedShort => take_n_m(outer, inner)
+            .map(Data2D::UnsignedShort)
+            .parse(input),
+        DataType::Int => take_n_m(outer, inner).map(Data2D::Int).parse(input),
+        DataType::UnsignedInt => take_n_m(outer, inner).map(Data2D::UnsignedInt).parse(input),
+        DataType::Long => take_n_m(outer, inner).map(Data2D::Long).parse(input),
+        DataType::UnsignedLong => take_n_m(outer, inner)
+            .map(Data2D::UnsignedLong)
+            .parse(input),
+        DataType::Float => take_n_m(outer, inner).map(Data2D::Float).parse(input),
+        DataType::Double => take_n_m(outer, inner).map(Data2D::Double).parse(input),
     }
 }
 
