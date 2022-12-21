@@ -5,7 +5,7 @@ use nom::{
     character::complete::*,
     combinator::opt,
     error::{VerboseError, VerboseErrorKind},
-    multi::separated_list0,
+    multi::*,
     number::complete::*,
     sequence::tuple,
     Parser,
@@ -111,6 +111,16 @@ impl_data!(i64, int);
 impl_data!(f32, float);
 impl_data!(f64, double);
 
+pub fn take<D: Data>(n: usize) -> impl FnMut(&str) -> Result<Vec<D>> {
+    move |input| {
+        let (input, first) = D::parse(input)?;
+        let (input, mut tail) =
+            many_m_n(0, n - 1, tuple((multispace1, D::parse)).map(|(_, d)| d)).parse(input)?;
+        tail.insert(0, first);
+        Ok((input, tail))
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum Data3 {
     Bit(Vec<[bool; 3]>),
@@ -184,7 +194,7 @@ pub fn data_vec(data_type: DataType, input: &str) -> Result<DataVec> {
 #[cfg(test)]
 mod test {
     use super::{Data3, DataType};
-    use nom::Finish;
+    use nom::{Finish, Parser};
 
     #[test]
     fn uint() {
@@ -196,6 +206,23 @@ mod test {
     fn int() {
         assert_eq!(super::int::<i32>("1234").finish().unwrap(), ("", 1234));
         assert_eq!(super::int::<i32>("-1234").finish().unwrap(), ("", -1234));
+    }
+
+    #[test]
+    fn take() {
+        let (residual, taken) = super::take::<f32>(4)
+            .parse(r#"1.0 2.0 3.0 4.0"#)
+            .finish()
+            .unwrap();
+        assert_eq!(residual, "");
+        assert_eq!(taken, vec![1.0, 2.0, 3.0, 4.0]);
+
+        let (residual, taken) = super::take::<f32>(2)
+            .parse(r#"1.0 2.0 3.0 4.0"#)
+            .finish()
+            .unwrap();
+        assert_eq!(residual, " 3.0 4.0");
+        assert_eq!(taken, vec![1.0, 2.0]);
     }
 
     #[test]
