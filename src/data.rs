@@ -146,10 +146,20 @@ pub fn take_3n<D: Data>(n: usize) -> impl FnMut(&str) -> Result<Vec<[D; 3]>> {
 }
 
 pub fn take_n_m<D: Data>(
-    _size_outer: usize,
-    _size_inner: usize,
+    size_outer: usize,
+    size_inner: usize,
 ) -> impl FnMut(&str) -> Result<Vec<Vec<D>>> {
-    move |input| Ok((input, Vec::new()))
+    move |input| {
+        let mut outer = Vec::with_capacity(size_outer);
+        let (mut input, first) = take_n(size_inner).parse(input)?;
+        outer.push(first);
+        for _ in 0..(size_outer - 1) {
+            let (sub, (_, inner)) = tuple((multispace1, take_n(size_inner))).parse(input)?;
+            outer.push(inner);
+            input = sub;
+        }
+        Ok((input, outer))
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
@@ -292,6 +302,21 @@ mod test {
             )
             .finish()
             .is_err());
+    }
+
+    #[test]
+    fn take_n_m() {
+        let (residual, taken) = super::take_n_m::<f32>(2, 3)
+            .parse(
+                r#"
+                1.0 2.0 3.0 4.0 5.0 6.0
+                "#
+                .trim(),
+            )
+            .finish()
+            .unwrap();
+        assert_eq!(residual, "");
+        assert_eq!(taken, vec![[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]);
     }
 
     #[test]
