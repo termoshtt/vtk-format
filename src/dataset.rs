@@ -76,7 +76,7 @@ pub fn structured_grid(input: &str) -> Result<StructuredGrid> {
     // p0x p0y p0z
     // p1x p1y p1z
     // ...
-    let (input, points) = data3(data_type, n).parse(input)?;
+    let (input, (_, points)) = tuple((multispace0, data3(data_type, n))).parse(input)?;
 
     Ok((input, StructuredGrid { dimension, points }))
 }
@@ -102,46 +102,46 @@ pub fn rectlinear_grid(input: &str) -> Result<RectlinearGrid> {
     // DIMENSIONS nx ny nz
     let (input, (_, dimension, _)) = tuple((space0, dimension, line_end)).parse(input)?;
     // X_COORDINATES nx dataType
-    let (input, (_, _, _, _nx, _, ty, _)) = tuple((
+    let (input, (_, _, _, nx, _, ty, _)) = tuple((
         space0,
         tag("X_COORDINATES"),
         space1,
-        uint::<u64>,
+        uint::<usize>,
         space1,
         data_type,
         line_end,
     ))
     .parse(input)?;
     // x0 x1 ...
-    let (input, x_coodinates) = coordinate(ty, input)?;
+    let (input, (_, x_coodinates)) = tuple((multispace0, data1d(ty, nx))).parse(input)?;
     let (input, _) = line_end(input)?;
     // Y_COORDINATES ny dataType
-    let (input, (_, _, _, _ny, _, ty, _)) = tuple((
+    let (input, (_, _, _, ny, _, ty, _)) = tuple((
         space0,
         tag("Y_COORDINATES"),
         space1,
-        uint::<u64>,
+        uint::<usize>,
         space1,
         data_type,
         line_end,
     ))
     .parse(input)?;
     // y0 y1 ...
-    let (input, y_coodinates) = coordinate(ty, input)?;
+    let (input, (_, y_coodinates)) = tuple((multispace0, data1d(ty, ny))).parse(input)?;
     let (input, _) = line_end(input)?;
     // Z_COORDINATES nz dataType
-    let (input, (_, _, _, _nz, _, ty, _)) = tuple((
+    let (input, (_, _, _, nz, _, ty, _)) = tuple((
         space0,
         tag("Z_COORDINATES"),
         space1,
-        uint::<u64>,
+        uint::<usize>,
         space1,
         data_type,
         line_end,
     ))
     .parse(input)?;
     // z0 z1 ...
-    let (input, z_coodinates) = coordinate(ty, input)?;
+    let (input, (_, z_coodinates)) = tuple((multispace0, data1d(ty, nz))).parse(input)?;
 
     Ok((
         input,

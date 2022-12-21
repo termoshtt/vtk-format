@@ -208,20 +208,19 @@ pub enum Data1D {
     Double(Vec<f64>),
 }
 
-pub fn coordinate(data_type: DataType, input: &str) -> Result<Data1D> {
-    let (input, _) = space0(input)?;
-    match data_type {
+pub fn data1d(data_type: DataType, n: usize) -> impl FnMut(&str) -> Result<Data1D> {
+    move |input| match data_type {
         DataType::Bit => unimplemented!(),
-        DataType::Char => i8::parse_vec.map(Data1D::Char).parse(input),
-        DataType::UnsignedChar => u8::parse_vec.map(Data1D::UnsignedChar).parse(input),
-        DataType::Short => i16::parse_vec.map(Data1D::Short).parse(input),
-        DataType::UnsignedShort => u16::parse_vec.map(Data1D::UnsignedShort).parse(input),
-        DataType::Int => i32::parse_vec.map(Data1D::Int).parse(input),
-        DataType::UnsignedInt => u32::parse_vec.map(Data1D::UnsignedInt).parse(input),
-        DataType::Long => i64::parse_vec.map(Data1D::Long).parse(input),
-        DataType::UnsignedLong => u64::parse_vec.map(Data1D::UnsignedLong).parse(input),
-        DataType::Float => f32::parse_vec.map(Data1D::Float).parse(input),
-        DataType::Double => f64::parse_vec.map(Data1D::Double).parse(input),
+        DataType::Char => take_n(n).map(Data1D::Char).parse(input),
+        DataType::UnsignedChar => take_n(n).map(Data1D::UnsignedChar).parse(input),
+        DataType::Short => take_n(n).map(Data1D::Short).parse(input),
+        DataType::UnsignedShort => take_n(n).map(Data1D::UnsignedShort).parse(input),
+        DataType::Int => take_n(n).map(Data1D::Int).parse(input),
+        DataType::UnsignedInt => take_n(n).map(Data1D::UnsignedInt).parse(input),
+        DataType::Long => take_n(n).map(Data1D::Long).parse(input),
+        DataType::UnsignedLong => take_n(n).map(Data1D::UnsignedLong).parse(input),
+        DataType::Float => take_n(n).map(Data1D::Float).parse(input),
+        DataType::Double => take_n(n).map(Data1D::Double).parse(input),
     }
 }
 
@@ -362,7 +361,7 @@ mod test {
         assert_eq!(residual, "");
         assert_eq!(out, Data3::Float(vec![[0.0, 1.0, 2.0], [3.0, 4.0, 5.0],]));
 
-        let (residual, out) = super::data3(DataType::UnsignedChar, 2)
+        let (residual, out) = super::data3(DataType::UnsignedInt, 2)
             .parse(
                 r#"
                 0 1 2
