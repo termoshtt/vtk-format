@@ -166,6 +166,21 @@ pub struct RectlinearGrid {
     pub z_coodinates: Data1D,
 }
 
+fn coordinate(tag_: &'static str) -> impl FnMut(&str) -> Result<Data1D> {
+    move |input| {
+        let (input, (_, _, n, _, ty, _)) = tuple((
+            tag(tag_),
+            multispace1,
+            uint::<usize>,
+            multispace1,
+            data_type,
+            multispace1,
+        ))
+        .parse(input)?;
+        data1d(ty, n).parse(input)
+    }
+}
+
 pub fn rectlinear_grid(input: &str) -> Result<RectlinearGrid> {
     // DATASET RECTILINEAR_GRID
     let (input, _) = tuple((
@@ -175,45 +190,12 @@ pub fn rectlinear_grid(input: &str) -> Result<RectlinearGrid> {
         multispace1,
     ))
     .parse(input)?;
-    // DIMENSIONS nx ny nz
     let (input, (dimension, _)) = tuple((dimension, multispace1)).parse(input)?;
-    // X_COORDINATES nx dataType
-    let (input, (_, _, nx, _, ty, _)) = tuple((
-        tag("X_COORDINATES"),
-        multispace1,
-        uint::<usize>,
-        multispace1,
-        data_type,
-        multispace1,
-    ))
-    .parse(input)?;
-    // x0 x1 ...
-    let (input, (x_coodinates, _)) = tuple((data1d(ty, nx), multispace1)).parse(input)?;
-    // Y_COORDINATES ny dataType
-    let (input, (_, _, ny, _, ty, _)) = tuple((
-        tag("Y_COORDINATES"),
-        multispace1,
-        uint::<usize>,
-        multispace1,
-        data_type,
-        multispace1,
-    ))
-    .parse(input)?;
-    // y0 y1 ...
-    let (input, (y_coodinates, _)) = tuple((data1d(ty, ny), multispace1)).parse(input)?;
-    // Z_COORDINATES nz dataType
-    let (input, (_, _, nz, _, ty, _)) = tuple((
-        tag("Z_COORDINATES"),
-        multispace1,
-        uint::<usize>,
-        multispace1,
-        data_type,
-        multispace1,
-    ))
-    .parse(input)?;
-    // z0 z1 ...
-    let (input, z_coodinates) = data1d(ty, nz).parse(input)?;
-
+    let (input, (x_coodinates, _)) =
+        tuple((coordinate("X_COORDINATES"), multispace1)).parse(input)?;
+    let (input, (y_coodinates, _)) =
+        tuple((coordinate("Y_COORDINATES"), multispace1)).parse(input)?;
+    let (input, z_coodinates) = coordinate("Z_COORDINATES").parse(input)?;
     Ok((
         input,
         RectlinearGrid {
