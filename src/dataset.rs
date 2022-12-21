@@ -24,7 +24,6 @@ pub struct StructuredPoints {
 pub fn structured_points(input: &str) -> Result<StructuredPoints> {
     // DATASET STRUCTURED_POINTS
     let (input, _tag) = tuple((
-        multispace0,
         tag("DATASET"),
         multispace1,
         tag("STRUCTURED_POINTS"),
@@ -62,7 +61,6 @@ pub struct StructuredGrid {
 pub fn structured_grid(input: &str) -> Result<StructuredGrid> {
     // DATASET STRUCTURED_GRID
     let (input, _) = tuple((
-        multispace0,
         tag("DATASET"),
         multispace1,
         tag("STRUCTURED_GRID"),
@@ -103,7 +101,6 @@ pub struct RectlinearGrid {
 pub fn rectlinear_grid(input: &str) -> Result<RectlinearGrid> {
     // DATASET RECTILINEAR_GRID
     let (input, _) = tuple((
-        multispace0,
         tag("DATASET"),
         multispace1,
         tag("RECTILINEAR_GRID"),
