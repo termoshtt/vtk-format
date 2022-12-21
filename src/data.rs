@@ -177,23 +177,19 @@ pub enum Data3 {
     Double(Vec<[f64; 3]>),
 }
 
-pub fn data3(data_type: DataType, input: &str) -> Result<Data3> {
-    fn inner<D: Data>(input: &str) -> Result<Vec<[D; 3]>> {
-        separated_list0(multispace1, D::parse3).parse(input)
-    }
-
-    match data_type {
+pub fn data3(data_type: DataType, n: usize) -> impl FnMut(&str) -> Result<Data3> {
+    move |input| match data_type {
         DataType::Bit => unimplemented!(),
-        DataType::Char => inner.map(Data3::Char).parse(input),
-        DataType::UnsignedChar => inner.map(Data3::UnsignedChar).parse(input),
-        DataType::Short => inner.map(Data3::Short).parse(input),
-        DataType::UnsignedShort => inner.map(Data3::UnsignedShort).parse(input),
-        DataType::Int => inner.map(Data3::Int).parse(input),
-        DataType::UnsignedInt => inner.map(Data3::UnsignedInt).parse(input),
-        DataType::Long => inner.map(Data3::Long).parse(input),
-        DataType::UnsignedLong => inner.map(Data3::UnsignedLong).parse(input),
-        DataType::Float => inner.map(Data3::Float).parse(input),
-        DataType::Double => inner.map(Data3::Double).parse(input),
+        DataType::Char => take_3n(n).map(Data3::Char).parse(input),
+        DataType::UnsignedChar => take_3n(n).map(Data3::UnsignedChar).parse(input),
+        DataType::Short => take_3n(n).map(Data3::Short).parse(input),
+        DataType::UnsignedShort => take_3n(n).map(Data3::UnsignedShort).parse(input),
+        DataType::Int => take_3n(n).map(Data3::Int).parse(input),
+        DataType::UnsignedInt => take_3n(n).map(Data3::UnsignedInt).parse(input),
+        DataType::Long => take_3n(n).map(Data3::Long).parse(input),
+        DataType::UnsignedLong => take_3n(n).map(Data3::UnsignedLong).parse(input),
+        DataType::Float => take_3n(n).map(Data3::Float).parse(input),
+        DataType::Double => take_3n(n).map(Data3::Double).parse(input),
     }
 }
 
@@ -353,29 +349,29 @@ mod test {
 
     #[test]
     fn data3() {
-        let (residual, out) = super::data3(
-            DataType::Float,
-            r#"
-            0.0 1.0 2.0
-            3.0 4.0 5.0
-            "#
-            .trim(),
-        )
-        .finish()
-        .unwrap();
+        let (residual, out) = super::data3(DataType::Float, 2)
+            .parse(
+                r#"
+                0.0 1.0 2.0
+                3.0 4.0 5.0
+                "#
+                .trim(),
+            )
+            .finish()
+            .unwrap();
         assert_eq!(residual, "");
         assert_eq!(out, Data3::Float(vec![[0.0, 1.0, 2.0], [3.0, 4.0, 5.0],]));
 
-        let (residual, out) = super::data3(
-            DataType::UnsignedInt,
-            r#"
-            0 1 2
-            3 4 5
-            "#
-            .trim(),
-        )
-        .finish()
-        .unwrap();
+        let (residual, out) = super::data3(DataType::UnsignedChar, 2)
+            .parse(
+                r#"
+                0 1 2
+                3 4 5
+                "#
+                .trim(),
+            )
+            .finish()
+            .unwrap();
         assert_eq!(residual, "");
         assert_eq!(out, Data3::UnsignedInt(vec![[0, 1, 2], [3, 4, 5],]));
     }

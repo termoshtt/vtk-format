@@ -62,11 +62,11 @@ pub fn structured_grid(input: &str) -> Result<StructuredGrid> {
     let (input, (_, dimension, _)) = tuple((space0, dimension, line_end)).parse(input)?;
 
     // POINTS n dataType
-    let (input, (_, _, _, _n, _, data_type, _)) = tuple((
+    let (input, (_, _, _, n, _, data_type, _)) = tuple((
         space0,
         tag("POINTS"),
         space1,
-        uint::<u64>,
+        uint::<usize>,
         space1,
         data_type,
         line_end,
@@ -76,7 +76,7 @@ pub fn structured_grid(input: &str) -> Result<StructuredGrid> {
     // p0x p0y p0z
     // p1x p1y p1z
     // ...
-    let (input, points) = data3(data_type, input)?;
+    let (input, points) = data3(data_type, n).parse(input)?;
 
     Ok((input, StructuredGrid { dimension, points }))
 }
