@@ -16,7 +16,7 @@ fn name(input: &str) -> Result<&str> {
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Scalars {
     name: String,
-    table_name: Option<String>,
+    table_name: String,
     num_comp: u8,
     scalars: Data1D,
 }
@@ -32,18 +32,55 @@ pub fn scalars(n: usize) -> impl FnMut(&str) -> Result<Scalars> {
             opt(tuple((multispace1, uint::<u8>)).map(|x| x.1)),
         ))
         .parse(input)?;
-        let (input, table_name) = opt(tuple((tag("LOOKUP_TABLE"), multispace1, name))
-            .map(|(_, _, table_name)| table_name.to_string()))
+        let (input, table_name) = opt(tuple((multispace1, tag("LOOKUP_TABLE"), multispace1, name))
+            .map(|(_, _tag, _, name)| name))
         .parse(input)?;
-        let (input, scalars) = data1d(data_type, n).parse(input)?;
+        let (input, (_, scalars)) = tuple((multispace1, data1d(data_type, n))).parse(input)?;
         Ok((
             input,
             Scalars {
                 name: data_name.to_string(),
-                table_name,
+                table_name: table_name.unwrap_or("default").to_string(),
                 num_comp: num_comp.unwrap_or(1),
                 scalars,
             },
         ))
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::Scalars;
+    use crate::Data1D;
+    use nom::{Finish, Parser};
+
+    #[test]
+    fn scalars() {
+        let (residual, out) = super::scalars(6)
+            .parse(
+                r#"
+                SCALARS cell_scalars int 1
+                LOOKUP_TABLE default
+                0
+                1
+                2
+                3
+                4
+                5
+                "#
+                .trim(),
+            )
+            .finish()
+            .unwrap();
+        assert_eq!(residual, "");
+        assert_eq!(
+            out,
+            Scalars {
+                name: "cell_scalars".to_string(),
+                table_name: "default".to_string(),
+                num_comp: 1,
+                scalars: Data1D::Int(vec![0, 1, 2, 3, 4, 5])
+            }
+        );
     }
 }
