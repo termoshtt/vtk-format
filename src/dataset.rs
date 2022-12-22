@@ -31,6 +31,11 @@ pub fn points(input: &str) -> Result<Data3> {
     data3(data_type, n).parse(input)
 }
 
+/// Structured Points
+///
+/// The file format supports 1D, 2D, and 3D structured point datasets.
+/// The dimensions `nx`, `ny`, `nz` must be greater than or equal to 1.
+/// The data spacing `sx`, `sy`, `sz` must be greater than 0.
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct StructuredPoints {
     pub dimension: Dimension,
@@ -69,10 +74,16 @@ pub fn structured_points(input: &str) -> Result<StructuredPoints> {
     ))
 }
 
+/// Structured Grid
+///
+/// The file format supports 1D, 2D, and 3D structured grid datasets.
+/// The dimensions `nx`, `ny`, `nz` must be greater than or equal to `1`.
+/// The point coordinates are defined by the data in the POINTS section.
+/// This consists of x-y-z data values for each point.
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct StructuredGrid {
-    dimension: Dimension,
-    points: Data3,
+    pub dimension: Dimension,
+    pub points: Data3,
 }
 
 pub fn structured_grid(input: &str) -> Result<StructuredGrid> {
@@ -90,6 +101,14 @@ pub fn structured_grid(input: &str) -> Result<StructuredGrid> {
     Ok((input, StructuredGrid { dimension, points }))
 }
 
+/// Rectilinear Grid
+///
+/// A rectilinear grid defines a dataset with regular topology,
+/// and semi-regular geometry aligned along the x-y-z coordinate axes.
+/// The geometry is defined by three lists of monotonically increasing coordinate values,
+/// one list for each of the x-y-z coordinate axes.
+/// The topology is defined by specifying the grid dimensions,
+/// which must be greater than or equal to `1`.
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct RectlinearGrid {
     pub dimension: Dimension,
@@ -139,6 +158,20 @@ pub fn rectlinear_grid(input: &str) -> Result<RectlinearGrid> {
     ))
 }
 
+/// Polygonal Data
+///
+/// The polygonal dataset consists of arbitrary combinations of surface graphics
+/// primitives vertices (and polyvertices), lines (and polylines),
+/// polygons (of various types), and triangle strips.
+/// Polygonal data is defined by the `POINTS`, `VERTICES`, `LINES`, `POLYGONS`,
+/// or `TRIANGLE_STRIPS` sections.
+/// The `POINTS` definition is the same as we saw for structured grid datasets.
+/// The `VERTICES`, `LINES`, `POLYGONS`, or `TRIANGLE_STRIPS` keywords define the polygonal dataset topology.
+/// Each of these keywords requires two parameters:
+/// the number of cells n and the size of the cell list size.
+/// The cell list size is the total number of integer values required to represent the list
+/// (i.e., sum of `numPoints` and connectivity indices over each cell).
+/// None of the keywords `VERTICES`, `LINES`, `POLYGONS`, or `TRIANGLE_STRIPS` is required
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Polydata {
     pub points: Data3,
