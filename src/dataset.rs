@@ -1,5 +1,7 @@
 use crate::*;
 use nom::{bytes::complete::*, character::complete::*, combinator::opt, sequence::tuple, Parser};
+use num_derive::{FromPrimitive, ToPrimitive};
+use num_traits::FromPrimitive;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Dimension {
@@ -229,10 +231,87 @@ pub fn polydata(input: &str) -> Result<Polydata> {
     ))
 }
 
+/// Unstructured Grid
+///
+/// The unstructured grid dataset consists of arbitrary combinations of any possible cell type.
+/// Unstructured grids are defined by points, cells, and cell types.
+/// The `CELLS` keyword requires two parameters: the number of cells n and the size of the cell list size.
+/// The cell list size is the total number of integer values required to represent the list
+/// (i.e., sum of numPoints and connectivity indices over each cell).
+/// The `CELL_TYPES` keyword requires a single parameter: the number of cells n.
+/// This value should match the value specified by the `CELLS` keyword.
+/// The cell types data is a single integer value per cell that specified cell type (see vtkCell.h or Figure 2).
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub struct UnstructuredGrid {
+    pub points: Data3,
+    pub cells: Vec<Vec<u64>>,
+    pub cell_types: Vec<CellType>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, FromPrimitive, ToPrimitive)]
+pub enum CellType {
+    // Linear cell types
+    Vertex = 1,
+    PolyVertex = 2,
+    Line = 3,
+    PolyLine = 4,
+    Triangle = 5,
+    TriangleStrip = 6,
+    Polygon = 7,
+    Pixel = 8,
+    Quad = 9,
+    Tetra = 10,
+    Voxel = 11,
+    Hexahedron = 12,
+    Wedge = 13,
+    Pyramid = 14,
+
+    // Non-linear cell types
+    QuadraticEdge = 21,
+    QuadraticTriangle = 22,
+    QuadraticQuad = 23,
+    QuadraticTetra = 24,
+    QuadraticHexahedron = 25,
+}
+
+pub fn unstructured_grid(input: &str) -> Result<UnstructuredGrid> {
+    // DATASET UNSTRUCTURED_GRID
+    let (input, _) = tuple((
+        tag("DATASET"),
+        multispace1,
+        tag("UNSTRUCTURED_GRID"),
+        multispace1,
+    ))
+    .parse(input)?;
+    let (input, points) = points(input)?;
+    let (input, _) = multispace1(input)?;
+    let (input, cells) = indices2d("CELLS").parse(input)?;
+    let (input, _) = multispace1(input)?;
+
+    let (input, (_, _, n, _)) =
+        tuple((tag("CELL_TYPES"), multispace1, uint::<usize>, multispace1)).parse(input)?;
+    let (input, cell_types) = take_n::<u8>(n).parse(input)?;
+    Ok((
+        input,
+        UnstructuredGrid {
+            points,
+            cells,
+            cell_types: cell_types
+                .into_iter()
+                .map(|i| FromPrimitive::from_u8(i).unwrap())
+                .collect(),
+        },
+    ))
+}
+
 #[cfg(test)]
 mod test {
-    use super::{Data1D, Data3, Dimension, Polydata, RectlinearGrid, StructuredGrid};
+    use super::{
+        CellType, Data1D, Data3, Dimension, Polydata, RectlinearGrid, StructuredGrid,
+        UnstructuredGrid,
+    };
     use nom::Finish;
+    use num_traits::FromPrimitive;
 
     #[test]
     fn structured_grid() {
@@ -361,6 +440,111 @@ mod test {
                 vertices: None,
                 lines: None,
                 triangle_strips: None,
+            }
+        );
+    }
+
+    #[test]
+    fn unstructured_grid() {
+        let (residual, out) = super::unstructured_grid(
+            r#"
+            DATASET UNSTRUCTURED_GRID
+            POINTS 27 float
+            0 0 0  1 0 0  2 0 0  0 1 0  1 1 0  2 1 0
+            0 0 1  1 0 1  2 0 1  0 1 1  1 1 1  2 1 1
+            0 1 2  1 1 2  2 1 2  0 1 3  1 1 3  2 1 3
+            0 1 4  1 1 4  2 1 4  0 1 5  1 1 5  2 1 5
+            0 1 6  1 1 6  2 1 6
+
+            CELLS 11 60
+            8 0 1 4 3 6 7 10 9
+            8 1 2 5 4 7 8 11 10
+            4 6 10 9 12
+            4 5 11 10 14
+            6 15 16 17 14 13 12
+            6 18 15 19 16 20 17
+            4 22 23 20 19
+            3 21 22 18
+            3 22 19 18
+            2 26 25
+            1 24
+
+            CELL_TYPES 11
+            12
+            12
+            10
+            10
+            7
+            6
+            9
+            5
+            5
+            3
+            1
+            "#
+            .trim(),
+        )
+        .finish()
+        .unwrap();
+        assert_eq!(residual, "");
+        assert_eq!(
+            out,
+            UnstructuredGrid {
+                points: Data3::Float(vec![
+                    [0.0, 0.0, 0.0],
+                    [1.0, 0.0, 0.0],
+                    [2.0, 0.0, 0.0],
+                    [0.0, 1.0, 0.0],
+                    [1.0, 1.0, 0.0],
+                    [2.0, 1.0, 0.0],
+                    [0.0, 0.0, 1.0],
+                    [1.0, 0.0, 1.0],
+                    [2.0, 0.0, 1.0],
+                    [0.0, 1.0, 1.0],
+                    [1.0, 1.0, 1.0],
+                    [2.0, 1.0, 1.0],
+                    [0.0, 1.0, 2.0],
+                    [1.0, 1.0, 2.0],
+                    [2.0, 1.0, 2.0],
+                    [0.0, 1.0, 3.0],
+                    [1.0, 1.0, 3.0],
+                    [2.0, 1.0, 3.0],
+                    [0.0, 1.0, 4.0],
+                    [1.0, 1.0, 4.0],
+                    [2.0, 1.0, 4.0],
+                    [0.0, 1.0, 5.0],
+                    [1.0, 1.0, 5.0],
+                    [2.0, 1.0, 5.0],
+                    [0.0, 1.0, 6.0],
+                    [1.0, 1.0, 6.0],
+                    [2.0, 1.0, 6.0],
+                ]),
+                cells: vec![
+                    vec![0, 1, 4, 3, 6, 7, 10, 9],
+                    vec![1, 2, 5, 4, 7, 8, 11, 10],
+                    vec![6, 10, 9, 12],
+                    vec![5, 11, 10, 14],
+                    vec![15, 16, 17, 14, 13, 12],
+                    vec![18, 15, 19, 16, 20, 17],
+                    vec![22, 23, 20, 19],
+                    vec![21, 22, 18],
+                    vec![22, 19, 18],
+                    vec![26, 25],
+                    vec![24],
+                ],
+                cell_types: vec![
+                    CellType::from_u8(12).unwrap(),
+                    CellType::from_u8(12).unwrap(),
+                    CellType::from_u8(10).unwrap(),
+                    CellType::from_u8(10).unwrap(),
+                    CellType::from_u8(7).unwrap(),
+                    CellType::from_u8(6).unwrap(),
+                    CellType::from_u8(9).unwrap(),
+                    CellType::from_u8(5).unwrap(),
+                    CellType::from_u8(5).unwrap(),
+                    CellType::from_u8(3).unwrap(),
+                    CellType::from_u8(1).unwrap(),
+                ]
             }
         );
     }
