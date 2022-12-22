@@ -111,7 +111,7 @@ impl_data!(i64, int);
 impl_data!(f32, float);
 impl_data!(f64, double);
 
-fn take_n<D: Data>(n: usize) -> impl FnMut(&str) -> Result<Vec<D>> {
+pub fn take_n<D: Data>(n: usize) -> impl FnMut(&str) -> Result<Vec<D>> {
     move |input| {
         let mut out = Vec::with_capacity(n);
         let (mut input, first) = D::parse(input)?;
@@ -125,7 +125,7 @@ fn take_n<D: Data>(n: usize) -> impl FnMut(&str) -> Result<Vec<D>> {
     }
 }
 
-fn take_3n<D: Data>(n: usize) -> impl FnMut(&str) -> Result<Vec<[D; 3]>> {
+pub fn take_3n<D: Data>(n: usize) -> impl FnMut(&str) -> Result<Vec<[D; 3]>> {
     move |input| {
         let data3 = |s| {
             tuple((D::parse, multispace1, D::parse, multispace1, D::parse))
@@ -145,7 +145,7 @@ fn take_3n<D: Data>(n: usize) -> impl FnMut(&str) -> Result<Vec<[D; 3]>> {
     }
 }
 
-fn take_n_m<D: Data>(
+pub fn take_n_m<D: Data>(
     size_outer: usize,
     size_inner: usize,
 ) -> impl FnMut(&str) -> Result<Vec<Vec<D>>> {
