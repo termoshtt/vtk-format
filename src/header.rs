@@ -1,6 +1,7 @@
 use crate::*;
 use nom::{branch::alt, bytes::complete::*, character::complete::*, sequence::tuple, Parser};
 
+/// File header `# vtk DataFile Version x.x`
 pub fn header(input: &str) -> Result<(u64, u64)> {
     let (input, _) = tuple((
         char('#'),
@@ -19,17 +20,20 @@ pub fn header(input: &str) -> Result<(u64, u64)> {
         .parse(input)
 }
 
+/// Second line of the file
 pub fn title(input: &str) -> Result<&str> {
     let (input, _) = space0(input)?;
     take_until("\n").parse(input)
 }
 
+/// `ASCII` or `BINARY`
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Format {
     ASCII,
     BINARY,
 }
 
+/// Third line of the file, `ASCII` or `BINARY`
 pub fn format(input: &str) -> Result<Format> {
     let (input, _) = space0(input)?;
     alt((
