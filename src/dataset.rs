@@ -183,16 +183,25 @@ pub struct Polydata {
 
 fn indices2d(tag_: &'static str) -> impl FnMut(&str) -> Result<Vec<Vec<u64>>> {
     move |input| {
-        let (input, (_, _, n, _, size, _)) = tuple((
+        let (mut input, (_, _, n, _, mut size)) = tuple((
             tag(tag_),
             multispace1,
             uint::<usize>,
             multispace1,
             uint::<usize>,
-            multispace1,
         ))
         .parse(input)?;
-        take_n_m(n, size / n).parse(input)
+        let mut out = Vec::with_capacity(n);
+        for _ in 0..n {
+            let (sub, (_, num_points, _)) =
+                tuple((multispace1, uint::<usize>, multispace1))(input)?;
+            let (sub, current) = take_n(num_points)(sub)?;
+            out.push(current);
+            size -= num_points + 1;
+            input = sub;
+        }
+        assert_eq!(size, 0);
+        Ok((input, out))
     }
 }
 
@@ -222,7 +231,7 @@ pub fn polydata(input: &str) -> Result<Polydata> {
 
 #[cfg(test)]
 mod test {
-    use super::{Data1D, Data3, Dimension, RectlinearGrid, StructuredGrid};
+    use super::{Data1D, Data3, Dimension, Polydata, RectlinearGrid, StructuredGrid};
     use nom::Finish;
 
     #[test]
@@ -297,6 +306,61 @@ mod test {
                 x_coodinates: Data1D::Float(vec![0.0, 1.0, 2.0, 3.0, 4.0]),
                 y_coodinates: Data1D::Float(vec![0.0, 1.0, 2.0, 3.0, 4.0]),
                 z_coodinates: Data1D::Float(vec![0.0, 1.0, 2.0, 3.0, 4.0]),
+            }
+        );
+    }
+
+    #[test]
+    fn polydata() {
+        let (residual, out) = super::polydata(
+            r#"
+            DATASET POLYDATA
+            POINTS 8 float
+            0.0 0.0 0.0
+            1.0 0.0 0.0
+            1.0 1.0 0.0
+            0.0 1.0 0.0
+            0.0 0.0 1.0
+            1.0 0.0 1.0
+            1.0 1.0 1.0
+            0.0 1.0 1.0
+            POLYGONS 6 30
+            4 0 1 2 3
+            4 4 5 6 7
+            4 0 1 5 4
+            4 2 3 7 6
+            4 0 4 7 3
+            4 1 2 6 5
+            "#
+            .trim(),
+        )
+        .finish()
+        .unwrap();
+        assert_eq!(residual, "");
+        assert_eq!(
+            out,
+            Polydata {
+                points: Data3::Float(vec![
+                    [0.0, 0.0, 0.0],
+                    [1.0, 0.0, 0.0],
+                    [1.0, 1.0, 0.0],
+                    [0.0, 1.0, 0.0],
+                    [0.0, 0.0, 1.0],
+                    [1.0, 0.0, 1.0],
+                    [1.0, 1.0, 1.0],
+                    [0.0, 1.0, 1.0],
+                ]),
+                polygons: Some(vec![
+                    vec![0, 1, 2, 3],
+                    vec![4, 5, 6, 7],
+                    vec![0, 1, 5, 4],
+                    vec![2, 3, 7, 6],
+                    vec![0, 4, 7, 3],
+                    vec![1, 2, 6, 5],
+                ]),
+                vertices: None,
+                lines: None,
+                triangle_strips: None,
             }
         );
     }
