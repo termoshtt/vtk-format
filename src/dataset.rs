@@ -229,6 +229,21 @@ pub fn polydata(input: &str) -> Result<Polydata> {
     ))
 }
 
+/// Unstructured Grid
+///
+/// The unstructured grid dataset consists of arbitrary combinations of any possible cell type.
+/// Unstructured grids are defined by points, cells, and cell types.
+/// The `CELLS` keyword requires two parameters: the number of cells n and the size of the cell list size.
+/// The cell list size is the total number of integer values required to represent the list
+/// (i.e., sum of numPoints and connectivity indices over each cell).
+/// The `CELL_TYPES` keyword requires a single parameter: the number of cells n.
+/// This value should match the value specified by the `CELLS` keyword.
+/// The cell types data is a single integer value per cell that specified cell type (see vtkCell.h or Figure 2).
+pub struct UnstructuredGrid {
+    pub points: Data3,
+    pub cells: Vec<Vec<u64>>,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum CellType {
     // Linear cell types
@@ -253,6 +268,31 @@ pub enum CellType {
     QuadraticQuad = 23,
     QuadraticTetra = 24,
     QuadraticHexahedron = 25,
+}
+
+pub fn unstructured_grid(input: &str) -> Result<UnstructuredGrid> {
+    // DATASET UNSTRUCTURED_GRID
+    let (input, _) = tuple((
+        tag("DATASET"),
+        multispace1,
+        tag("UNSTRUCTURED_GRID"),
+        multispace1,
+    ))
+    .parse(input)?;
+    let (input, points) = points(input)?;
+    // CELLS n size
+    // numPoints0, i, j, k, l, ...
+    // numPoints1, i, j, k, l, ...
+    // numPoints2, i, j, k, l, ...
+    // ...
+    let (input, cells) = indices2d("CELLS").parse(input)?;
+    //
+    // CELL_TYPES n
+    // type0
+    // type1
+    // type2
+    // ...
+    Ok((input, UnstructuredGrid { points, cells }))
 }
 
 #[cfg(test)]
