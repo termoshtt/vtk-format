@@ -1,12 +1,11 @@
 //! Parser of [VTK legacy format](https://vtk.org/wp-content/uploads/2015/04/file-formats.pdf)
 
-mod data;
-mod dataset;
-mod header;
+pub mod dataset;
+pub mod header;
+pub mod primitive;
 
-pub use data::*;
-pub use dataset::*;
-pub use header::*;
+use header::*;
+use primitive::*;
 
 use nom::{character::complete::*, error::VerboseError, sequence::tuple, Parser};
 
