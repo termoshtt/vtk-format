@@ -229,6 +229,32 @@ pub fn polydata(input: &str) -> Result<Polydata> {
     ))
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum CellType {
+    // Linear cell types
+    Vertex = 1,
+    PolyVertex = 2,
+    Line = 3,
+    PolyLine = 4,
+    Triangle = 5,
+    TriangleStrip = 6,
+    Polygon = 7,
+    Pixel = 8,
+    Quad = 9,
+    Tetra = 10,
+    Voxel = 11,
+    Hexahedron = 12,
+    Wedge = 13,
+    Pyramid = 14,
+
+    // Non-linear cell types
+    QuadraticEdge = 21,
+    QuadraticTriangle = 22,
+    QuadraticQuad = 23,
+    QuadraticTetra = 24,
+    QuadraticHexahedron = 25,
+}
+
 #[cfg(test)]
 mod test {
     use super::{Data1D, Data3, Dimension, Polydata, RectlinearGrid, StructuredGrid};
