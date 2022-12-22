@@ -1,5 +1,6 @@
 //! Parser of [VTK legacy format](https://vtk.org/wp-content/uploads/2015/04/file-formats.pdf)
 
+pub mod attribute;
 pub mod dataset;
 pub mod header;
 pub mod primitive;
