@@ -163,6 +163,37 @@ pub fn take_n_m<D: Data>(
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub enum Data1 {
+    Bit(bool),
+    UnsignedChar(u8),
+    Char(i8),
+    UnsignedShort(u16),
+    Short(i16),
+    UnsignedInt(u32),
+    Int(i32),
+    UnsignedLong(u64),
+    Long(i64),
+    Float(f32),
+    Double(f64),
+}
+
+pub fn data1(data_type: DataType) -> impl FnMut(&str) -> Result<Data1> {
+    move |input| match data_type {
+        DataType::Bit => unimplemented!(),
+        DataType::Char => Data::parse.map(Data1::Char).parse(input),
+        DataType::UnsignedChar => Data::parse.map(Data1::UnsignedChar).parse(input),
+        DataType::Short => Data::parse.map(Data1::Short).parse(input),
+        DataType::UnsignedShort => Data::parse.map(Data1::UnsignedShort).parse(input),
+        DataType::Int => Data::parse.map(Data1::Int).parse(input),
+        DataType::UnsignedInt => Data::parse.map(Data1::UnsignedInt).parse(input),
+        DataType::Long => Data::parse.map(Data1::Long).parse(input),
+        DataType::UnsignedLong => Data::parse.map(Data1::UnsignedLong).parse(input),
+        DataType::Float => Data::parse.map(Data1::Float).parse(input),
+        DataType::Double => Data::parse.map(Data1::Double).parse(input),
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum Data3N {
     Bit(Vec<[bool; 3]>),
     UnsignedChar(Vec<[u8; 3]>),
@@ -206,6 +237,44 @@ pub enum Data1D {
     Long(Vec<i64>),
     Float(Vec<f32>),
     Double(Vec<f64>),
+}
+
+impl Data1D {
+    pub fn push(&mut self, value: Data1) {
+        match (self, value) {
+            (Data1D::Bit(vec), Data1::Bit(value)) => vec.push(value),
+            (Data1D::Char(vec), Data1::Char(value)) => vec.push(value),
+            (Data1D::UnsignedChar(vec), Data1::UnsignedChar(value)) => vec.push(value),
+            (Data1D::Short(vec), Data1::Short(value)) => vec.push(value),
+            (Data1D::UnsignedShort(vec), Data1::UnsignedShort(value)) => vec.push(value),
+            (Data1D::Int(vec), Data1::Int(value)) => vec.push(value),
+            (Data1D::UnsignedInt(vec), Data1::UnsignedInt(value)) => vec.push(value),
+            (Data1D::Long(vec), Data1::Long(value)) => vec.push(value),
+            (Data1D::UnsignedLong(vec), Data1::UnsignedLong(value)) => vec.push(value),
+            (Data1D::Float(vec), Data1::Float(value)) => vec.push(value),
+            (Data1D::Double(vec), Data1::Double(value)) => vec.push(value),
+            _ => panic!("Type mismatch"),
+        }
+    }
+
+    pub fn insert(&mut self, position: usize, value: Data1) {
+        match (self, value) {
+            (Data1D::Bit(vec), Data1::Bit(value)) => vec.insert(position, value),
+            (Data1D::Char(vec), Data1::Char(value)) => vec.insert(position, value),
+            (Data1D::UnsignedChar(vec), Data1::UnsignedChar(value)) => vec.insert(position, value),
+            (Data1D::Short(vec), Data1::Short(value)) => vec.insert(position, value),
+            (Data1D::UnsignedShort(vec), Data1::UnsignedShort(value)) => {
+                vec.insert(position, value)
+            }
+            (Data1D::Int(vec), Data1::Int(value)) => vec.insert(position, value),
+            (Data1D::UnsignedInt(vec), Data1::UnsignedInt(value)) => vec.insert(position, value),
+            (Data1D::Long(vec), Data1::Long(value)) => vec.insert(position, value),
+            (Data1D::UnsignedLong(vec), Data1::UnsignedLong(value)) => vec.insert(position, value),
+            (Data1D::Float(vec), Data1::Float(value)) => vec.insert(position, value),
+            (Data1D::Double(vec), Data1::Double(value)) => vec.insert(position, value),
+            _ => panic!("Type mismatch"),
+        }
+    }
 }
 
 pub fn data1d(data_type: DataType, n: usize) -> impl FnMut(&str) -> Result<Data1D> {
