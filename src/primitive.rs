@@ -177,6 +177,24 @@ pub enum Data1 {
     Double(f64),
 }
 
+impl Data1 {
+    pub fn to_u8(&self) -> u8 {
+        match *self {
+            Data1::Bit(_) => unimplemented!(),
+            Data1::UnsignedChar(v) => v,
+            Data1::Char(v) => v as u8,
+            Data1::UnsignedShort(v) => v as u8,
+            Data1::Short(v) => v as u8,
+            Data1::UnsignedInt(v) => v as u8,
+            Data1::Int(v) => v as u8,
+            Data1::UnsignedLong(v) => v as u8,
+            Data1::Long(v) => v as u8,
+            Data1::Float(v) => v as u8,
+            Data1::Double(v) => v as u8,
+        }
+    }
+}
+
 pub fn data1(data_type: DataType) -> impl FnMut(&str) -> Result<Data1> {
     move |input| match data_type {
         DataType::Bit => unimplemented!(),

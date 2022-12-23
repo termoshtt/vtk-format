@@ -1,6 +1,5 @@
 use crate::*;
 use nom::{bytes::complete::*, character::complete::*, combinator::opt, sequence::tuple, Parser};
-
 fn name(input: &str) -> Result<&str> {
     take_till(|c: char| c.is_whitespace()).parse(input)
 }
@@ -23,25 +22,45 @@ pub struct Scalars {
 
 pub fn scalars(n: usize) -> impl FnMut(&str) -> Result<Scalars> {
     move |input| {
-        let (input, (_tag, _, data_name, _, data_type, num_comp)) = tuple((
-            tag("SCALARS"),
-            multispace1,
-            name,
-            multispace1,
-            data_type,
-            opt(tuple((multispace1, uint::<u8>)).map(|x| x.1)),
-        ))
-        .parse(input)?;
+        let (input, (_tag, _, data_name, _, data_type)) =
+            tuple((tag("SCALARS"), multispace1, name, multispace1, data_type)).parse(input)?;
+
+        // num_comp or first element of scalars
+        let (input, num_comp) =
+            opt(tuple((multispace1, data1(data_type))).map(|x| x.1)).parse(input)?;
+
         let (input, table_name) = opt(tuple((multispace1, tag("LOOKUP_TABLE"), multispace1, name))
             .map(|(_, _tag, _, name)| name))
         .parse(input)?;
-        let (input, (_, scalars)) = tuple((multispace1, data1d(data_type, n))).parse(input)?;
+
+        let (input, (num_comp, scalars)) = if table_name.is_some() {
+            // num_comp and scalars are explicitly separated in this case
+            let (input, (_, scalars)) = tuple((multispace1, data1d(data_type, n))).parse(input)?;
+            (input, (num_comp.map(|v| v.to_u8()).unwrap_or(1), scalars))
+        } else {
+            let num_comp = num_comp.unwrap();
+            let (input, (_, mut scalars)) =
+                tuple((multispace1, data1d(data_type, n - 1))).parse(input)?;
+            // if the first scalar is parsed as `numComp`, this is `None`,
+            // otherwise the last scalar.
+            let (input, last) =
+                opt(tuple((multispace1, data1(data_type))).map(|(_, last)| last)).parse(input)?;
+            let num_comp = if let Some(last) = last {
+                scalars.push(last);
+                num_comp.to_u8()
+            } else {
+                scalars.insert(0, num_comp);
+                1
+            };
+            (input, (num_comp, scalars))
+        };
+
         Ok((
             input,
             Scalars {
                 name: data_name.to_string(),
                 table_name: table_name.unwrap_or("default").to_string(),
-                num_comp: num_comp.unwrap_or(1),
+                num_comp,
                 scalars,
             },
         ))
@@ -61,12 +80,54 @@ mod test {
                 r#"
                 SCALARS cell_scalars int 1
                 LOOKUP_TABLE default
-                0
-                1
-                2
-                3
-                4
-                5
+                0 1 2 3 4 5
+                "#
+                .trim(),
+            )
+            .finish()
+            .unwrap();
+        assert_eq!(residual, "");
+        assert_eq!(
+            out,
+            Scalars {
+                name: "cell_scalars".to_string(),
+                table_name: "default".to_string(),
+                num_comp: 1,
+                scalars: Data1D::Int(vec![0, 1, 2, 3, 4, 5])
+            }
+        );
+
+        // omit LOOKUP_TABLE
+        let (residual, out) = super::scalars(6)
+            .parse(
+                r#"
+                SCALARS cell_scalars int 1
+                0 1 2 3 4 5
+                "#
+                .trim(),
+            )
+            .finish()
+            .unwrap();
+        assert_eq!(residual, "");
+        assert_eq!(
+            out,
+            Scalars {
+                name: "cell_scalars".to_string(),
+                table_name: "default".to_string(),
+                num_comp: 1,
+                scalars: Data1D::Int(vec![0, 1, 2, 3, 4, 5])
+            }
+        );
+
+        // omit both LOOKUP_TABLE and numComp
+        //
+        // In this case, `0` in below input must be regared as
+        // the first element of scalars, not as `numComp`.
+        let (residual, out) = super::scalars(6)
+            .parse(
+                r#"
+                SCALARS cell_scalars int
+                0 1 2 3 4 5
                 "#
                 .trim(),
             )
