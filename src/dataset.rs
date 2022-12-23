@@ -20,7 +20,7 @@ pub fn dimension(input: &str) -> Result<Dimension> {
 // p0x p0y p0z
 // p1x p1y p1z
 // ...
-pub fn points(input: &str) -> Result<Data3> {
+pub fn points(input: &str) -> Result<Data3N> {
     let (input, (_, _, n, _, data_type, _)) = tuple((
         tag("POINTS"),
         multispace1,
@@ -30,7 +30,7 @@ pub fn points(input: &str) -> Result<Data3> {
         multispace1,
     ))
     .parse(input)?;
-    data3(data_type, n).parse(input)
+    data3n(data_type, n).parse(input)
 }
 
 /// Structured Points
@@ -85,7 +85,7 @@ pub fn structured_points(input: &str) -> Result<StructuredPoints> {
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct StructuredGrid {
     pub dimension: Dimension,
-    pub points: Data3,
+    pub points: Data3N,
 }
 
 pub fn structured_grid(input: &str) -> Result<StructuredGrid> {
@@ -176,7 +176,7 @@ pub fn rectlinear_grid(input: &str) -> Result<RectlinearGrid> {
 /// None of the keywords `VERTICES`, `LINES`, `POLYGONS`, or `TRIANGLE_STRIPS` is required
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Polydata {
-    pub points: Data3,
+    pub points: Data3N,
     pub vertices: Option<Vec<Vec<u64>>>,
     pub lines: Option<Vec<Vec<u64>>>,
     pub polygons: Option<Vec<Vec<u64>>>,
@@ -243,7 +243,7 @@ pub fn polydata(input: &str) -> Result<Polydata> {
 /// The cell types data is a single integer value per cell that specified cell type (see vtkCell.h or Figure 2).
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct UnstructuredGrid {
-    pub points: Data3,
+    pub points: Data3N,
     pub cells: Vec<Vec<u64>>,
     pub cell_types: Vec<CellType>,
 }
@@ -307,7 +307,7 @@ pub fn unstructured_grid(input: &str) -> Result<UnstructuredGrid> {
 #[cfg(test)]
 mod test {
     use super::{
-        CellType, Data1D, Data3, Dimension, Polydata, RectlinearGrid, StructuredGrid,
+        CellType, Data1D, Data3N, Dimension, Polydata, RectlinearGrid, StructuredGrid,
         UnstructuredGrid,
     };
     use nom::Finish;
@@ -342,7 +342,7 @@ mod test {
                     ny: 2,
                     nz: 2
                 },
-                points: Data3::UnsignedInt(vec![
+                points: Data3N::UnsignedInt(vec![
                     [0, 0, 0],
                     [1, 0, 0],
                     [0, 1, 0],
@@ -419,7 +419,7 @@ mod test {
         assert_eq!(
             out,
             Polydata {
-                points: Data3::Float(vec![
+                points: Data3N::Float(vec![
                     [0.0, 0.0, 0.0],
                     [1.0, 0.0, 0.0],
                     [1.0, 1.0, 0.0],
@@ -490,7 +490,7 @@ mod test {
         assert_eq!(
             out,
             UnstructuredGrid {
-                points: Data3::Float(vec![
+                points: Data3N::Float(vec![
                     [0.0, 0.0, 0.0],
                     [1.0, 0.0, 0.0],
                     [2.0, 0.0, 0.0],
