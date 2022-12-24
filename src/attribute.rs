@@ -67,9 +67,39 @@ pub fn scalars(n: usize) -> impl FnMut(&str) -> Result<Scalars> {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub struct LookupTable {
+    table_name: String,
+    colors: Vec<[f32; 4]>,
+}
+
+pub fn lookup_table(input: &str) -> Result<LookupTable> {
+    // LOOKUP_TABLE tableName size
+    // r0 g0 b0 a0
+    // r1 g1 b1 a1
+    // ...
+    let (input, (_tag, _, table_name, _, size, _)) = tuple((
+        tag("LOOKUP_TABLE"),
+        multispace1,
+        name,
+        multispace1,
+        uint::<usize>,
+        multispace1,
+    ))
+    .parse(input)?;
+    let (input, colors) = take_4n::<f32>(size).parse(input)?;
+    Ok((
+        input,
+        LookupTable {
+            table_name: table_name.to_string(),
+            colors,
+        },
+    ))
+}
+
 #[cfg(test)]
 mod test {
-    use super::Scalars;
+    use super::{LookupTable, Scalars};
     use crate::Data1D;
     use nom::{Finish, Parser};
 
@@ -141,6 +171,43 @@ mod test {
                 table_name: "default".to_string(),
                 num_comp: 1,
                 scalars: Data1D::Int(vec![0, 1, 2, 3, 4, 5])
+            }
+        );
+    }
+
+    #[test]
+    fn lookup_table() {
+        let (residual, out) = super::lookup_table(
+            r#"
+            LOOKUP_TABLE my_table 8
+            0.0 0.0 0.0 1.0
+            1.0 0.0 0.0 1.0
+            0.0 1.0 0.0 1.0
+            1.0 1.0 0.0 1.0
+            0.0 0.0 1.0 1.0
+            1.0 0.0 1.0 1.0
+            0.0 1.0 1.0 1.0
+            1.0 1.0 1.0 1.0
+            "#
+            .trim(),
+        )
+        .finish()
+        .unwrap();
+        assert_eq!(residual, "");
+        assert_eq!(
+            out,
+            LookupTable {
+                table_name: "my_table".to_string(),
+                colors: vec![
+                    [0.0, 0.0, 0.0, 1.0],
+                    [1.0, 0.0, 0.0, 1.0],
+                    [0.0, 1.0, 0.0, 1.0],
+                    [1.0, 1.0, 0.0, 1.0],
+                    [0.0, 0.0, 1.0, 1.0],
+                    [1.0, 0.0, 1.0, 1.0],
+                    [0.0, 1.0, 1.0, 1.0],
+                    [1.0, 1.0, 1.0, 1.0],
+                ]
             }
         );
     }

@@ -145,6 +145,34 @@ pub fn take_3n<D: Data>(n: usize) -> impl FnMut(&str) -> Result<Vec<[D; 3]>> {
     }
 }
 
+pub fn take_4n<D: Data>(n: usize) -> impl FnMut(&str) -> Result<Vec<[D; 4]>> {
+    move |input| {
+        let data4n = |s| {
+            tuple((
+                D::parse,
+                multispace1,
+                D::parse,
+                multispace1,
+                D::parse,
+                multispace1,
+                D::parse,
+            ))
+            .map(|(d1, _, d2, _, d3, _, d4)| [d1, d2, d3, d4])
+            .parse(s)
+        };
+
+        let mut out = Vec::with_capacity(n);
+        let (mut input, first) = data4n(input)?;
+        out.push(first);
+        for _ in 0..(n - 1) {
+            let (sub_input, (_, nth)) = tuple((multispace1, data4n)).parse(input)?;
+            out.push(nth);
+            input = sub_input;
+        }
+        Ok((input, out))
+    }
+}
+
 pub fn take_n_m<D: Data>(
     size_outer: usize,
     size_inner: usize,
