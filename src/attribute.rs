@@ -211,9 +211,34 @@ pub fn normals(n: usize) -> impl FnMut(&str) -> Result<Normals> {
 /// ...
 /// t(n-1)0 t(n-1)1 ... t(n-1)(dim-1)
 /// ```
-pub struct TextureCoordinates {}
-pub fn texture_coordinates(_input: &str) -> Result<TextureCoordinates> {
-    todo!()
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub struct TextureCoordinates {
+    name: String,
+    data: Data2D,
+}
+
+pub fn texture_coordinates(n: usize) -> impl Fn(&str) -> Result<TextureCoordinates> {
+    move |input: &str| {
+        let (input, (_tag, _, data_name, _, dim, _, ty, _)) = tuple((
+            tag("TEXTURE_COORDINATES"),
+            multispace1,
+            name,
+            multispace1,
+            uint::<usize>,
+            multispace1,
+            data_type,
+            multispace1,
+        ))
+        .parse(input)?;
+        let (input, data) = data2d(ty, n, dim).parse(input)?;
+        Ok((
+            input,
+            TextureCoordinates {
+                name: data_name.to_string(),
+                data,
+            },
+        ))
+    }
 }
 
 /// ```text
