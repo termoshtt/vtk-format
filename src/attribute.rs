@@ -118,9 +118,32 @@ pub fn lookup_table(input: &str) -> Result<LookupTable> {
 /// ...
 /// v(n-1)x v(n-1)y v(n-1)z
 /// ```
-pub struct Vectors {}
-pub fn vectors(_input: &str) -> Result<Vectors> {
-    todo!()
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub struct Vectors {
+    data_name: String,
+    vectors: Data3N,
+}
+
+pub fn vectors(n: usize) -> impl Fn(&str) -> Result<Vectors> {
+    move |input: &str| {
+        let (input, (_tag, _, data_name, _, ty, _)) = tuple((
+            tag("VECTORS"),
+            multispace1,
+            name,
+            multispace1,
+            data_type,
+            multispace1,
+        ))
+        .parse(input)?;
+        let (input, vectors) = data3n(ty, n).parse(input)?;
+        Ok((
+            input,
+            Vectors {
+                data_name: data_name.to_string(),
+                vectors,
+            },
+        ))
+    }
 }
 
 /// ```text
@@ -197,7 +220,7 @@ pub fn field(_input: &str) -> Result<Field> {
 #[cfg(test)]
 mod test {
     use super::{LookupTable, Scalars};
-    use crate::Data1D;
+    use crate::{Data1D, Data3N};
     use nom::{Finish, Parser};
 
     #[test]
@@ -306,6 +329,58 @@ mod test {
                     [1.0, 1.0, 1.0, 1.0],
                 ]
             }
+        );
+    }
+
+    #[test]
+    fn vectors() {
+        let (residual, out) = super::vectors(27)
+            .parse(
+                r#"
+                VECTORS vectors float
+                1 0 0  1 1 0  0 2 0  1 0 0  1 1 0  0 2 0
+                1 0 0  1 1 0  0 2 0  1 0 0  1 1 0  0 2 0
+                0 0 1  0 0 1  0 0 1  0 0 1  0 0 1  0 0 1
+                0 0 1  0 0 1  0 0 1  0 0 1  0 0 1  0 0 1
+                0 0 1  0 0 1  0 0 1
+                "#
+                .trim(),
+            )
+            .finish()
+            .unwrap();
+        assert_eq!(residual, "");
+        assert_eq!(out.data_name, "vectors");
+        assert_eq!(
+            out.vectors,
+            Data3N::Float(vec![
+                [1.0, 0.0, 0.0],
+                [1.0, 1.0, 0.0],
+                [0.0, 2.0, 0.0],
+                [1.0, 0.0, 0.0],
+                [1.0, 1.0, 0.0],
+                [0.0, 2.0, 0.0],
+                [1.0, 0.0, 0.0],
+                [1.0, 1.0, 0.0],
+                [0.0, 2.0, 0.0],
+                [1.0, 0.0, 0.0],
+                [1.0, 1.0, 0.0],
+                [0.0, 2.0, 0.0],
+                [0.0, 0.0, 1.0],
+                [0.0, 0.0, 1.0],
+                [0.0, 0.0, 1.0],
+                [0.0, 0.0, 1.0],
+                [0.0, 0.0, 1.0],
+                [0.0, 0.0, 1.0],
+                [0.0, 0.0, 1.0],
+                [0.0, 0.0, 1.0],
+                [0.0, 0.0, 1.0],
+                [0.0, 0.0, 1.0],
+                [0.0, 0.0, 1.0],
+                [0.0, 0.0, 1.0],
+                [0.0, 0.0, 1.0],
+                [0.0, 0.0, 1.0],
+                [0.0, 0.0, 1.0]
+            ])
         );
     }
 }
