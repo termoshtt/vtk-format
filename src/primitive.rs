@@ -127,17 +127,45 @@ pub fn take_n<D: Data>(n: usize) -> impl FnMut(&str) -> Result<Vec<D>> {
 
 pub fn take_3n<D: Data>(n: usize) -> impl FnMut(&str) -> Result<Vec<[D; 3]>> {
     move |input| {
-        let data3 = |s| {
+        let data3n = |s| {
             tuple((D::parse, multispace1, D::parse, multispace1, D::parse))
                 .map(|(d1, _, d2, _, d3)| [d1, d2, d3])
                 .parse(s)
         };
 
         let mut out = Vec::with_capacity(n);
-        let (mut input, first) = data3(input)?;
+        let (mut input, first) = data3n(input)?;
         out.push(first);
         for _ in 0..(n - 1) {
-            let (sub_input, (_, nth)) = tuple((multispace1, data3)).parse(input)?;
+            let (sub_input, (_, nth)) = tuple((multispace1, data3n)).parse(input)?;
+            out.push(nth);
+            input = sub_input;
+        }
+        Ok((input, out))
+    }
+}
+
+pub fn take_4n<D: Data>(n: usize) -> impl FnMut(&str) -> Result<Vec<[D; 4]>> {
+    move |input| {
+        let data4n = |s| {
+            tuple((
+                D::parse,
+                multispace1,
+                D::parse,
+                multispace1,
+                D::parse,
+                multispace1,
+                D::parse,
+            ))
+            .map(|(d1, _, d2, _, d3, _, d4)| [d1, d2, d3, d4])
+            .parse(s)
+        };
+
+        let mut out = Vec::with_capacity(n);
+        let (mut input, first) = data4n(input)?;
+        out.push(first);
+        for _ in 0..(n - 1) {
+            let (sub_input, (_, nth)) = tuple((multispace1, data4n)).parse(input)?;
             out.push(nth);
             input = sub_input;
         }
@@ -163,7 +191,56 @@ pub fn take_n_m<D: Data>(
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub enum Data3 {
+pub enum Data1 {
+    Bit(bool),
+    UnsignedChar(u8),
+    Char(i8),
+    UnsignedShort(u16),
+    Short(i16),
+    UnsignedInt(u32),
+    Int(i32),
+    UnsignedLong(u64),
+    Long(i64),
+    Float(f32),
+    Double(f64),
+}
+
+impl Data1 {
+    pub fn to_u8(&self) -> u8 {
+        match *self {
+            Data1::Bit(_) => unimplemented!(),
+            Data1::UnsignedChar(v) => v,
+            Data1::Char(v) => v as u8,
+            Data1::UnsignedShort(v) => v as u8,
+            Data1::Short(v) => v as u8,
+            Data1::UnsignedInt(v) => v as u8,
+            Data1::Int(v) => v as u8,
+            Data1::UnsignedLong(v) => v as u8,
+            Data1::Long(v) => v as u8,
+            Data1::Float(v) => v as u8,
+            Data1::Double(v) => v as u8,
+        }
+    }
+}
+
+pub fn data1(data_type: DataType) -> impl FnMut(&str) -> Result<Data1> {
+    move |input| match data_type {
+        DataType::Bit => unimplemented!(),
+        DataType::Char => Data::parse.map(Data1::Char).parse(input),
+        DataType::UnsignedChar => Data::parse.map(Data1::UnsignedChar).parse(input),
+        DataType::Short => Data::parse.map(Data1::Short).parse(input),
+        DataType::UnsignedShort => Data::parse.map(Data1::UnsignedShort).parse(input),
+        DataType::Int => Data::parse.map(Data1::Int).parse(input),
+        DataType::UnsignedInt => Data::parse.map(Data1::UnsignedInt).parse(input),
+        DataType::Long => Data::parse.map(Data1::Long).parse(input),
+        DataType::UnsignedLong => Data::parse.map(Data1::UnsignedLong).parse(input),
+        DataType::Float => Data::parse.map(Data1::Float).parse(input),
+        DataType::Double => Data::parse.map(Data1::Double).parse(input),
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub enum Data3N {
     Bit(Vec<[bool; 3]>),
     UnsignedChar(Vec<[u8; 3]>),
     Char(Vec<[i8; 3]>),
@@ -177,19 +254,19 @@ pub enum Data3 {
     Double(Vec<[f64; 3]>),
 }
 
-pub fn data3(data_type: DataType, n: usize) -> impl FnMut(&str) -> Result<Data3> {
+pub fn data3n(data_type: DataType, n: usize) -> impl FnMut(&str) -> Result<Data3N> {
     move |input| match data_type {
         DataType::Bit => unimplemented!(),
-        DataType::Char => take_3n(n).map(Data3::Char).parse(input),
-        DataType::UnsignedChar => take_3n(n).map(Data3::UnsignedChar).parse(input),
-        DataType::Short => take_3n(n).map(Data3::Short).parse(input),
-        DataType::UnsignedShort => take_3n(n).map(Data3::UnsignedShort).parse(input),
-        DataType::Int => take_3n(n).map(Data3::Int).parse(input),
-        DataType::UnsignedInt => take_3n(n).map(Data3::UnsignedInt).parse(input),
-        DataType::Long => take_3n(n).map(Data3::Long).parse(input),
-        DataType::UnsignedLong => take_3n(n).map(Data3::UnsignedLong).parse(input),
-        DataType::Float => take_3n(n).map(Data3::Float).parse(input),
-        DataType::Double => take_3n(n).map(Data3::Double).parse(input),
+        DataType::Char => take_3n(n).map(Data3N::Char).parse(input),
+        DataType::UnsignedChar => take_3n(n).map(Data3N::UnsignedChar).parse(input),
+        DataType::Short => take_3n(n).map(Data3N::Short).parse(input),
+        DataType::UnsignedShort => take_3n(n).map(Data3N::UnsignedShort).parse(input),
+        DataType::Int => take_3n(n).map(Data3N::Int).parse(input),
+        DataType::UnsignedInt => take_3n(n).map(Data3N::UnsignedInt).parse(input),
+        DataType::Long => take_3n(n).map(Data3N::Long).parse(input),
+        DataType::UnsignedLong => take_3n(n).map(Data3N::UnsignedLong).parse(input),
+        DataType::Float => take_3n(n).map(Data3N::Float).parse(input),
+        DataType::Double => take_3n(n).map(Data3N::Double).parse(input),
     }
 }
 
@@ -206,6 +283,44 @@ pub enum Data1D {
     Long(Vec<i64>),
     Float(Vec<f32>),
     Double(Vec<f64>),
+}
+
+impl Data1D {
+    pub fn push(&mut self, value: Data1) {
+        match (self, value) {
+            (Data1D::Bit(vec), Data1::Bit(value)) => vec.push(value),
+            (Data1D::Char(vec), Data1::Char(value)) => vec.push(value),
+            (Data1D::UnsignedChar(vec), Data1::UnsignedChar(value)) => vec.push(value),
+            (Data1D::Short(vec), Data1::Short(value)) => vec.push(value),
+            (Data1D::UnsignedShort(vec), Data1::UnsignedShort(value)) => vec.push(value),
+            (Data1D::Int(vec), Data1::Int(value)) => vec.push(value),
+            (Data1D::UnsignedInt(vec), Data1::UnsignedInt(value)) => vec.push(value),
+            (Data1D::Long(vec), Data1::Long(value)) => vec.push(value),
+            (Data1D::UnsignedLong(vec), Data1::UnsignedLong(value)) => vec.push(value),
+            (Data1D::Float(vec), Data1::Float(value)) => vec.push(value),
+            (Data1D::Double(vec), Data1::Double(value)) => vec.push(value),
+            _ => panic!("Type mismatch"),
+        }
+    }
+
+    pub fn insert(&mut self, position: usize, value: Data1) {
+        match (self, value) {
+            (Data1D::Bit(vec), Data1::Bit(value)) => vec.insert(position, value),
+            (Data1D::Char(vec), Data1::Char(value)) => vec.insert(position, value),
+            (Data1D::UnsignedChar(vec), Data1::UnsignedChar(value)) => vec.insert(position, value),
+            (Data1D::Short(vec), Data1::Short(value)) => vec.insert(position, value),
+            (Data1D::UnsignedShort(vec), Data1::UnsignedShort(value)) => {
+                vec.insert(position, value)
+            }
+            (Data1D::Int(vec), Data1::Int(value)) => vec.insert(position, value),
+            (Data1D::UnsignedInt(vec), Data1::UnsignedInt(value)) => vec.insert(position, value),
+            (Data1D::Long(vec), Data1::Long(value)) => vec.insert(position, value),
+            (Data1D::UnsignedLong(vec), Data1::UnsignedLong(value)) => vec.insert(position, value),
+            (Data1D::Float(vec), Data1::Float(value)) => vec.insert(position, value),
+            (Data1D::Double(vec), Data1::Double(value)) => vec.insert(position, value),
+            _ => panic!("Type mismatch"),
+        }
+    }
 }
 
 pub fn data1d(data_type: DataType, n: usize) -> impl FnMut(&str) -> Result<Data1D> {
@@ -267,7 +382,7 @@ pub fn data2d(
 
 #[cfg(test)]
 mod test {
-    use super::{Data3, DataType};
+    use super::{Data3N, DataType};
     use nom::{Finish, Parser};
 
     #[test]
@@ -353,8 +468,8 @@ mod test {
     }
 
     #[test]
-    fn data3() {
-        let (residual, out) = super::data3(DataType::Float, 2)
+    fn data3n() {
+        let (residual, out) = super::data3n(DataType::Float, 2)
             .parse(
                 r#"
                 0.0 1.0 2.0
@@ -365,9 +480,9 @@ mod test {
             .finish()
             .unwrap();
         assert_eq!(residual, "");
-        assert_eq!(out, Data3::Float(vec![[0.0, 1.0, 2.0], [3.0, 4.0, 5.0],]));
+        assert_eq!(out, Data3N::Float(vec![[0.0, 1.0, 2.0], [3.0, 4.0, 5.0],]));
 
-        let (residual, out) = super::data3(DataType::UnsignedInt, 2)
+        let (residual, out) = super::data3n(DataType::UnsignedInt, 2)
             .parse(
                 r#"
                 0 1 2
@@ -378,6 +493,6 @@ mod test {
             .finish()
             .unwrap();
         assert_eq!(residual, "");
-        assert_eq!(out, Data3::UnsignedInt(vec![[0, 1, 2], [3, 4, 5],]));
+        assert_eq!(out, Data3N::UnsignedInt(vec![[0, 1, 2], [3, 4, 5],]));
     }
 }
