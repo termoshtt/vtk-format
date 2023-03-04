@@ -120,8 +120,8 @@ pub fn lookup_table(input: &str) -> Result<LookupTable> {
 /// ```
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Vectors {
-    data_name: String,
-    vectors: Data3N,
+    name: String,
+    data: Data3N,
 }
 
 pub fn vectors(n: usize) -> impl Fn(&str) -> Result<Vectors> {
@@ -135,12 +135,12 @@ pub fn vectors(n: usize) -> impl Fn(&str) -> Result<Vectors> {
             multispace1,
         ))
         .parse(input)?;
-        let (input, vectors) = data3n(ty, n).parse(input)?;
+        let (input, data) = data3n(ty, n).parse(input)?;
         Ok((
             input,
             Vectors {
-                data_name: data_name.to_string(),
-                vectors,
+                name: data_name.to_string(),
+                data,
             },
         ))
     }
@@ -153,9 +153,32 @@ pub fn vectors(n: usize) -> impl Fn(&str) -> Result<Vectors> {
 /// ...
 /// n(n-1)x n(n-1)y n(n-1)z
 /// ```
-pub struct Normals {}
-pub fn normals(_input: &str) -> Result<Normals> {
-    todo!()
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub struct Normals {
+    name: String,
+    data: Data3N,
+}
+
+pub fn normals(n: usize) -> impl FnMut(&str) -> Result<Normals> {
+    move |input: &str| {
+        let (input, (_tag, _, data_name, _, ty, _)) = tuple((
+            tag("NORMALS"),
+            multispace1,
+            name,
+            multispace1,
+            data_type,
+            multispace1,
+        ))
+        .parse(input)?;
+        let (input, data) = data3n(ty, n).parse(input)?;
+        Ok((
+            input,
+            Normals {
+                name: data_name.to_string(),
+                data,
+            },
+        ))
+    }
 }
 
 /// ```text
@@ -349,9 +372,9 @@ mod test {
             .finish()
             .unwrap();
         assert_eq!(residual, "");
-        assert_eq!(out.data_name, "vectors");
+        assert_eq!(out.name, "vectors");
         assert_eq!(
-            out.vectors,
+            out.data,
             Data3N::Float(vec![
                 [1.0, 0.0, 0.0],
                 [1.0, 1.0, 0.0],
@@ -380,6 +403,38 @@ mod test {
                 [0.0, 0.0, 1.0],
                 [0.0, 0.0, 1.0],
                 [0.0, 0.0, 1.0]
+            ])
+        );
+    }
+
+    #[test]
+    fn normals() {
+        let (residual, out) = super::normals(6)
+            .parse(
+                r#"
+                NORMALS cell_normals float
+                0 0 -1
+                0 0 1
+                0 -1 0
+                0 1 0
+                -1 0 0
+                1 0 0
+                "#
+                .trim(),
+            )
+            .finish()
+            .unwrap();
+        assert_eq!(residual, "");
+        assert_eq!(out.name, "cell_normals");
+        assert_eq!(
+            out.data,
+            Data3N::Float(vec![
+                [0.0, 0.0, -1.0],
+                [0.0, 0.0, 1.0],
+                [0.0, -1.0, 0.0],
+                [0.0, 1.0, 0.0],
+                [-1.0, 0.0, 0.0],
+                [1.0, 0.0, 0.0]
             ])
         );
     }
