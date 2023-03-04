@@ -74,9 +74,32 @@ pub fn scalars(n: usize) -> impl FnMut(&str) -> Result<Scalars> {
 /// ...
 /// c(n-1)0 c (n-1)1 ... c (n-1)(nValues-1)
 /// ```
-pub struct ColorScalars {}
-pub fn color_scalars(_input: &str) -> Result<ColorScalars> {
-    todo!()
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub struct ColorScalars {
+    name: String,
+    colors: Vec<Vec<f32>>,
+}
+
+pub fn color_scalars(n: usize) -> impl FnMut(&str) -> Result<ColorScalars> {
+    move |input: &str| {
+        let (input, (_tag, _, data_name, _, n_values, _)) = tuple((
+            tag("COLOR_SCALARS"),
+            multispace1,
+            name,
+            multispace1,
+            uint::<usize>,
+            multispace1,
+        ))
+        .parse(input)?;
+        let (input, colors) = take_n_m::<f32>(n, n_values).parse(input)?;
+        Ok((
+            input,
+            ColorScalars {
+                name: data_name.to_string(),
+                colors,
+            },
+        ))
+    }
 }
 
 /// ```text
